@@ -1,16 +1,12 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 import streamlit as st
-import os
 import requests
 from itertools import cycle
 
-# Load Hugging Face API keys
+# Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
-    os.getenv("HF_API_KEY_1"),
-    os.getenv("HF_API_KEY_2"),
-    os.getenv("HF_API_KEY_3")
+    st.secrets["huggingface"]["HF_API_KEY_1"],
+    st.secrets["huggingface"]["HF_API_KEY_2"],
+    st.secrets["huggingface"]["HF_API_KEY_3"]
 ]
 api_key_cycle = cycle(hf_api_keys)
 
@@ -36,8 +32,6 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
             return f"API Error: {e}"
     
     return "Error: All API keys exhausted or failed to respond."
-
-
 
 # Streamlit setup
 st.set_page_config(page_title="Q&A Demo")
