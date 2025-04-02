@@ -15,7 +15,7 @@ api_key_cycle = cycle(hf_api_keys)
 
 # Function to get response from Hugging Face model with rate limiting
 @lru_cache(maxsize=10)  # Cache API responses to prevent key exhaustion
-def get_hf_response(question, model_id="deepseek-ai/DeepSeek-R1"):
+def get_hf_response(question, model_id="01-ai/Yi-34B-Chat"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
