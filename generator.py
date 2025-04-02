@@ -25,7 +25,7 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
             # If rate limited, wait and retry
             if response.status_code == 429:
                 wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
-                st.warning(f"🚦 Rate limit hit! Retrying in {wait_time} seconds...")
+                st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
                 continue  # Try next key
 
@@ -40,93 +40,76 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
         except requests.exceptions.RequestException as e:
             return f"API Error: {e}"
 
-    return "❌ Error: All API keys exhausted or failed to respond."
+    return "Error: All API keys exhausted or failed to respond."
 
-# ✅ CACHE API RESULTS FOR 1 HOUR
-@st.cache_data(ttl=3600)  # Cache results for 1 hour
-def get_cached_hf_response(question):
-    return get_hf_response(question)
+# Streamlit Setup
+st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
-# ✅ CUSTOM STYLING & THEMING
-st.set_page_config(page_title="Reconnect - Career Guide", page_icon="🚀", layout="wide")
-
-st.markdown(
-    """
+# Custom CSS for a modern design
+st.markdown("""
     <style>
-    /* Background */
+    body {
+        background-color: #121212;
+        color: white;
+        font-family: 'Inter', sans-serif;
+    }
     .stApp {
-        background-color: #F4F6F9;
+        background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+        padding: 20px;
+        border-radius: 20px;
     }
-
-    /* Title */
-    .title {
-        font-size: 32px;
-        font-weight: bold;
-        text-align: center;
-        color: #333333;
-    }
-
-    /* Input Box */
     .stTextInput>div>div>input {
-        font-size: 18px;
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
         padding: 12px;
-        border: 2px solid #4CAF50;
-        transition: 0.3s;
+        color: white;
     }
-    .stTextInput>div>div>input:focus {
-        border: 2px solid #2E7D32;
-        box-shadow: 0px 0px 8px #2E7D32;
-    }
-
-    /* Button */
     .stButton>button {
-        background: linear-gradient(to right, #4CAF50, #2E7D32);
+        background: linear-gradient(90deg, #ff7eb3 0%, #ff758c 100%);
         color: white;
         font-size: 18px;
         border-radius: 12px;
-        padding: 12px 24px;
-        transition: 0.3s;
+        padding: 12px;
+        transition: 0.3s ease-in-out;
         border: none;
     }
     .stButton>button:hover {
-        background: linear-gradient(to right, #2E7D32, #4CAF50);
+        background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
         transform: scale(1.05);
     }
-
-    /* Response Box */
-    .response-box {
-        background: white;
-        padding: 20px;
+    .stExpander {
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 10px;
+    }
+    .title {
+        font-size: 36px;
+        font-weight: bold;
+        text-align: center;
+        color: white;
     }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-# ✅ UI HEADER
-st.markdown("<p class='title'>NEXTLEAP : Career Roadmap Generator</p>", unsafe_allow_html=True)
-st.markdown("🔹 Get a **personalized career roadmap** with expert guidance!")
+# UI Layout
+st.markdown('<h1 class="title">Reconnect: Career Roadmap Generator</h1>', unsafe_allow_html=True)
+st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-st.divider()
+# Input Field
+job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
 
-# ✅ USER INPUT
-job_title = st.text_input("🔍 Enter the job title:", key="job_title")
-
-# ✅ GENERATE BUTTON WITH SMOOTH ANIMATION
+# Generate Button
 submit = st.button("Generate Roadmap")
 
 if submit:
     full_prompt = f"You are a career guide. Provide a roadmap for: {job_title}."
+    
+    # API Call
+    response = get_hf_response(full_prompt)
 
-    with st.spinner("🔄 Generating career roadmap... Please wait."):
-        response = get_cached_hf_response(full_prompt)
+    # Response UI
+    st.subheader("Career Roadmap")
+    with st.expander("See Full Details"):
+        st.write(response)
 
-    # ✅ DISPLAY OUTPUT IN A STYLISH BOX
-    st.subheader("Your Career Roadmap")
-    with st.container():
-        st.markdown(f"<div class='response-box'><p>{response}</p></div>", unsafe_allow_html=True)
-
-    st.success("Roadmap Generated! Keep Learning & Growing")
+    st.success("Roadmap generated successfully.")
