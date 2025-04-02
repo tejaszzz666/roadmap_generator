@@ -11,9 +11,10 @@ hf_api_keys = [
 ]
 api_key_cycle = cycle(hf_api_keys)
 
+# Function to get response from Hugging Face model with rate limiting
 def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    
+
     for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
         headers = {"Authorization": f"Bearer {api_key}"}
@@ -21,12 +22,13 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
 
+            # If rate limited, wait and retry
             if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
+                wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue
-            
+                continue  # Try next key
+
             response.raise_for_status()
             response_data = response.json()
 
@@ -40,12 +42,10 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
 
     return "Error: All API keys exhausted or failed to respond."
 
-# Streamlit Multi-Page App Setup
-st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Home", "Roadmap", "Resources", "About"])
+# Streamlit Setup
+st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
-# Custom CSS for Sleek Design
+# Custom CSS for a modern design
 st.markdown("""
     <style>
     body {
@@ -77,42 +77,61 @@ st.markdown("""
         background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
         transform: scale(1.05);
     }
+    .stExpander {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 10px;
+    }
     .title {
         font-size: 36px;
         font-weight: bold;
         text-align: center;
         color: white;
     }
+    .sidebar-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: white;
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# Sidebar Navigation
+st.sidebar.markdown("<h2 class='sidebar-title'>Navigation</h2>", unsafe_allow_html=True)
+page = st.sidebar.radio("Go to", ["Home", "Generate Roadmap", "About", "Contact"])
+
 if page == "Home":
-    st.markdown('<h1 class="title">NextLeap: Career Roadmap Generator</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="title">Welcome to NextLeap</h1>', unsafe_allow_html=True)
+    st.write("An AI-powered career roadmap generator to help you navigate your journey.")
+    st.image("https://source.unsplash.com/1600x900/?career,success", use_column_width=True)
+
+elif page == "Generate Roadmap":
+    st.markdown('<h1 class="title">Career Roadmap Generator</h1>', unsafe_allow_html=True)
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
-    
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
     submit = st.button("Generate Roadmap")
-
     if submit:
-        st.session_state["roadmap"] = get_hf_response(f"You are a career guide. Provide a roadmap for: {job_title}.")
-        st.success("Roadmap generated successfully. Go to the 'Roadmap' page to view it.")
-
-elif page == "Roadmap":
-    st.markdown('<h1 class="title">Generated Roadmap</h1>', unsafe_allow_html=True)
-    if "roadmap" in st.session_state:
+        full_prompt = f"You are a career guide. Provide a roadmap for: {job_title}."
+        response = get_hf_response(full_prompt)
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
-            st.write(st.session_state["roadmap"])
-    else:
-        st.warning("No roadmap generated yet. Please go to 'Home' and enter a job title.")
-
-elif page == "Resources":
-    st.markdown('<h1 class="title">Resources</h1>', unsafe_allow_html=True)
-    st.write("Explore learning resources for different career paths:")
-    st.markdown("- **Data Science**: [Coursera](https://www.coursera.org/), [Kaggle](https://www.kaggle.com/)")
-    st.markdown("- **Software Engineering**: [LeetCode](https://leetcode.com/), [CS50](https://cs50.harvard.edu/)")
-    st.markdown("- **Cybersecurity**: [TryHackMe](https://tryhackme.com/), [Cybrary](https://www.cybrary.it/)")
+            st.write(response)
+        st.success("Roadmap generated successfully.")
 
 elif page == "About":
-    st.markdown('<h1 class="title">About</h1>', unsafe_allow_html=True)
-    st.write("NextLeap is an AI-powered career roadmap generator. It provides structured guidance on career paths, required skills, and learning resources to help users achieve their professional goals.")
+    st.markdown('<h1 class="title">About NextLeap</h1>', unsafe_allow_html=True)
+    st.write("NextLeap is an AI-powered platform that helps users generate personalized career roadmaps.")
+    st.image("https://source.unsplash.com/1600x900/?technology,innovation", use_column_width=True)
+    st.markdown("### Why Choose Us?")
+    st.write("✔ AI-Powered Insights")
+    st.write("✔ Tailored Career Guidance")
+    st.write("✔ Easy-to-Use Interface")
+
+elif page == "Contact":
+    st.markdown('<h1 class="title">Contact Us</h1>', unsafe_allow_html=True)
+    st.write("Have questions? Reach out to us!")
+    st.text_input("Your Name", placeholder="Enter your name")
+    st.text_input("Your Email", placeholder="Enter your email")
+    st.text_area("Message", placeholder="Type your message here")
+    if st.button("Send Message"):
+        st.success("Thank you! We'll get back to you soon.")
