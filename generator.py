@@ -8,13 +8,14 @@ from functools import lru_cache
 hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
-    st.secrets["huggingface"]["HF_API_KEY_3"]
+    st.secrets["huggingface"]["HF_API_KEY_3"],
+    st.secrets["huggingface"]["HF_API_KEY_4"]  # Added fourth key
 ]
 api_key_cycle = cycle(hf_api_keys)
 
 # Function to get response from Hugging Face model with rate limiting
-@st.cache_data
-def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
+@lru_cache(maxsize=10)  # Cache API responses to prevent key exhaustion
+def get_hf_response(question, model_id="deepseek-ai/deepseek-llm-7b-chat"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
@@ -45,13 +46,13 @@ def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
     return "Error: All API keys exhausted or failed to respond."
 
 # Streamlit Setup
-st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
+st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
 # Custom CSS for a modern design
 st.markdown("""
     <style>
     body {
-        background-color: #000000;
+        background-color: #000000; /* Matte Black */
         color: white;
         font-family: 'Inter', sans-serif;
     }
@@ -104,16 +105,14 @@ job_title = st.text_input("Enter the job title:", key="job_title", placeholder="
 submit = st.button("Generate Roadmap")
 
 if submit:
-    full_prompt = f"You are a career guide. Provide a detailed step-by-step roadmap for: {job_title}."  
+    full_prompt = f"You are a career guide. Provide a professional, structured career roadmap for: {job_title}."
     
     # API Call
     response = get_hf_response(full_prompt)
-    
+
     # Response UI
     st.subheader("Career Roadmap")
-    roadmap_steps = response.split("\n")
-    for step in roadmap_steps:
-        if step.strip():
-            st.write(f"- {step}")
+    with st.expander("See Full Details"):
+        st.markdown(response.replace("\n", "\n\n"))
 
     st.success("Roadmap generated successfully.")
