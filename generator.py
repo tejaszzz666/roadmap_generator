@@ -9,13 +9,13 @@ hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
     st.secrets["huggingface"]["HF_API_KEY_3"],
-    st.secrets["huggingface"]["HF_API_KEY_4"]  # Added fourth key
+    st.secrets["huggingface"]["HF_API_KEY_4"]
 ]
 api_key_cycle = cycle(hf_api_keys)
 
 # Function to get response from Hugging Face model with rate limiting
 @lru_cache(maxsize=10)  # Cache API responses to prevent key exhaustion
-def get_hf_response(question, model_id="deepseek-ai/deepseek-llm-7b-chat"):
+def get_hf_response(question, model_id="deepseek-ai/DeepSeek-R1"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
@@ -46,7 +46,7 @@ def get_hf_response(question, model_id="deepseek-ai/deepseek-llm-7b-chat"):
     return "Error: All API keys exhausted or failed to respond."
 
 # Streamlit Setup
-st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
+st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
 # Custom CSS for a modern design
 st.markdown("""
