@@ -2,6 +2,7 @@ import time
 import requests
 import streamlit as st
 from itertools import cycle
+from functools import lru_cache
 
 # Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
@@ -11,8 +12,9 @@ hf_api_keys = [
 ]
 api_key_cycle = cycle(hf_api_keys)
 
+# Function to get response from Hugging Face model with rate limiting
 @st.cache_data
-def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
+def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
@@ -21,16 +23,17 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
-            
+
+            # If rate limited, wait and retry
             if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
+                wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue  
+                continue  # Try next key
 
             response.raise_for_status()
             response_data = response.json()
-            
+
             if isinstance(response_data, list) and 'generated_text' in response_data[0]:
                 return response_data[0]['generated_text']
             else:
@@ -44,6 +47,7 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
 # Streamlit Setup
 st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
+# Custom CSS for a modern design
 st.markdown("""
     <style>
     body {
@@ -100,20 +104,16 @@ job_title = st.text_input("Enter the job title:", key="job_title", placeholder="
 submit = st.button("Generate Roadmap")
 
 if submit:
-    full_prompt = f"You are a career guide. Provide a roadmap for: {job_title}."
+    full_prompt = f"You are a career guide. Provide a detailed step-by-step roadmap for: {job_title}."  
     
+    # API Call
     response = get_hf_response(full_prompt)
-
+    
     # Response UI
     st.subheader("Career Roadmap")
-    
-    if response:
-        sections = response.split("\n")
-        for section in sections:
-            if section.strip():
-                with st.expander(section.split('.')[0]):
-                    st.write(section)
-    else:
-        st.write("No roadmap generated. Try again.")
-    
+    roadmap_steps = response.split("\n")
+    for step in roadmap_steps:
+        if step.strip():
+            st.write(f"- {step}")
+
     st.success("Roadmap generated successfully.")
