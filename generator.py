@@ -9,13 +9,13 @@ hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
     st.secrets["huggingface"]["HF_API_KEY_3"],
-    st.secrets["huggingface"]["HF_API_KEY_4"]
+    st.secrets["huggingface"]["HF_API_KEY_4"],
 ]
 api_key_cycle = cycle(hf_api_keys)
 
-# Function to get response from Hugging Face model with rate limiting
-@lru_cache(maxsize=10)  # Cache API responses to prevent key exhaustion
-def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
+# Caching API responses to prevent key exhaustion
+@lru_cache(maxsize=10)
+def get_hf_response(question, model_id="deepseek-ai/deepseek-coder-6.7b-instruct"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
@@ -45,72 +45,29 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
 
     return "Error: All API keys exhausted or failed to respond."
 
-# Streamlit Setup
-st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
+# Streamlit setup
+st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# Custom CSS for a modern design
-st.markdown("""
-    <style>
-    body {
-        background-color: #000000; /* Matte Black */
-        color: white;
-        font-family: 'Inter', sans-serif;
-    }
-    .stApp {
-        background: #000000;
-        padding: 20px;
-        border-radius: 20px;
-    }
-    .stTextInput>div>div>input {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        padding: 12px;
-        color: white;
-    }
-    .stButton>button {
-        background: linear-gradient(90deg, #ff7eb3 0%, #ff758c 100%);
-        color: white;
-        font-size: 18px;
-        border-radius: 12px;
-        padding: 12px;
-        transition: 0.3s ease-in-out;
-        border: none;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
-        transform: scale(1.05);
-    }
-    .stExpander {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 10px;
-    }
-    .title {
-        font-size: 36px;
-        font-weight: bold;
-        text-align: center;
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# UI Layout
-st.markdown('<h1 class="title">NextLeap : Career Roadmap Generator</h1>', unsafe_allow_html=True)
+# UI Design
+st.markdown("<h1 style='text-align: center; color: white;'>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-# Input Field
+# Input field
 job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
 
-# Generate Button
+# Generate button
 submit = st.button("Generate Roadmap")
 
+# Input prompt template
+input_prompt = """
+You are a career guide. Please provide a professional, step-by-step career roadmap and learning resources available on the internet for the job title: {job_title}. Present the information in bullet points.
+"""
+
 if submit:
-    full_prompt = f"You are a career guide. Provide a professional, structured career roadmap for: {job_title}."
-    
-    # API Call
+    full_prompt = input_prompt.format(job_title=job_title)
     response = get_hf_response(full_prompt)
 
-    # Response UI
+    # Display response
     st.subheader("Career Roadmap")
     with st.expander("See Full Details"):
         st.markdown(response.replace("\n", "\n\n"))
