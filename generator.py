@@ -2,7 +2,6 @@ import time
 import requests
 import streamlit as st
 from itertools import cycle
-from functools import lru_cache
 
 # Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
@@ -12,8 +11,8 @@ hf_api_keys = [
 ]
 api_key_cycle = cycle(hf_api_keys)
 
-@lru_cache(maxsize=50)
-def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
+@st.cache_data
+def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
@@ -22,16 +21,16 @@ def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
-
+            
             if response.status_code == 429:
                 wait_time = int(response.headers.get("Retry-After", 10))
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue  # Try next key
+                continue  
 
             response.raise_for_status()
             response_data = response.json()
-
+            
             if isinstance(response_data, list) and 'generated_text' in response_data[0]:
                 return response_data[0]['generated_text']
             else:
@@ -45,7 +44,6 @@ def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
 # Streamlit Setup
 st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
-# Custom CSS for modern dark theme
 st.markdown("""
     <style>
     body {
@@ -59,7 +57,7 @@ st.markdown("""
         border-radius: 20px;
     }
     .stTextInput>div>div>input {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 10px;
         padding: 12px;
         color: white;
@@ -104,12 +102,18 @@ submit = st.button("Generate Roadmap")
 if submit:
     full_prompt = f"You are a career guide. Provide a roadmap for: {job_title}."
     
-    # API Call
     response = get_hf_response(full_prompt)
 
     # Response UI
     st.subheader("Career Roadmap")
-    with st.expander("See Full Details"):
-        st.write(response)
-
+    
+    if response:
+        sections = response.split("\n")
+        for section in sections:
+            if section.strip():
+                with st.expander(section.split('.')[0]):
+                    st.write(section)
+    else:
+        st.write("No roadmap generated. Try again.")
+    
     st.success("Roadmap generated successfully.")
