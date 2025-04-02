@@ -2,6 +2,7 @@ import time
 import requests
 import streamlit as st
 from itertools import cycle
+from functools import lru_cache
 
 # Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
@@ -11,7 +12,7 @@ hf_api_keys = [
 ]
 api_key_cycle = cycle(hf_api_keys)
 
-# Function to get response from Hugging Face model with rate limiting
+@lru_cache(maxsize=50)
 def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
@@ -22,9 +23,8 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
 
-            # If rate limited, wait and retry
             if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
+                wait_time = int(response.headers.get("Retry-After", 10))
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
                 continue  # Try next key
@@ -43,9 +43,9 @@ def get_hf_response(question, model_id="HuggingFaceH4/zephyr-7b-beta"):
     return "Error: All API keys exhausted or failed to respond."
 
 # Streamlit Setup
-st.set_page_config(page_title="NextLeap - Career Roadmap Generator", layout="wide")
+st.set_page_config(page_title="Reconnect - Career Guide", layout="wide")
 
-# Custom CSS for a modern design
+# Custom CSS for modern dark theme
 st.markdown("""
     <style>
     body {
@@ -63,7 +63,6 @@ st.markdown("""
         border-radius: 10px;
         padding: 12px;
         color: white;
-        border: 1px solid #444;
     }
     .stButton>button {
         background: linear-gradient(90deg, #ff7eb3 0%, #ff758c 100%);
@@ -79,12 +78,12 @@ st.markdown("""
         transform: scale(1.05);
     }
     .stExpander {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 10px;
     }
     .title {
-        font-size: 42px;
+        font-size: 36px;
         font-weight: bold;
         text-align: center;
         color: white;
