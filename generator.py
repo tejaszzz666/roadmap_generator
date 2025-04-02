@@ -15,7 +15,7 @@ api_key_cycle = cycle(hf_api_keys)
 
 # Caching API responses to prevent key exhaustion
 @lru_cache(maxsize=10)
-def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct"):
+def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
