@@ -14,7 +14,7 @@ api_key_cycle = cycle(hf_api_keys)
 
 # Function to get response from Hugging Face model with rate limiting
 @st.cache_data
-def get_hf_response(question, model_id="meta-llama/Llama-2-7b-chat-hft"):
+def get_hf_response(question, model_id="tiiuae/falcon-7b-instruct"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
     for _ in range(len(hf_api_keys)):
