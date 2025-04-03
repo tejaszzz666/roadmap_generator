@@ -1,108 +1,137 @@
-import streamlit as st
-import pyrebase
-from google.cloud import firestore
-import requests
 import time
+import requests
+import streamlit as st
+import pandas as pd
 from itertools import cycle
 from functools import lru_cache
 
-# Firebase Configuration
-firebaseConfig = {
-    "apiKey": st.secrets["firebase"]["apiKey"],
-    "authDomain": st.secrets["firebase"]["authDomain"],
-    "projectId": st.secrets["firebase"]["projectId"]
-}
-firebase = pyrebase.initialize_app(firebaseConfig)
-auth = firebase.auth()
-db = firestore.Client()
-
-# Authentication
-st.sidebar.title("Login/Register")
-choice = st.sidebar.selectbox("Login or Sign up", ["Login", "Sign up"])
-email = st.sidebar.text_input("Email")
-password = st.sidebar.text_input("Password", type="password")
-if choice == "Sign up":
-    if st.sidebar.button("Register"):
-        user = auth.create_user_with_email_and_password(email, password)
-        st.success("Account created! Login to continue.")
-if choice == "Login":
-    if st.sidebar.button("Login"):
-        user = auth.sign_in_with_email_and_password(email, password)
-        st.session_state["user"] = user
-        st.success("Login Successful!")
-
-# Save and Fetch User Data
-def save_roadmap(user_email, roadmap_data):
-    db.collection("users").document(user_email).set({"roadmap": roadmap_data})
-
-def get_roadmap(user_email):
-    doc = db.collection("users").document(user_email).get()
-    return doc.to_dict() if doc.exists else None
-
-# Hugging Face API Keys
+# Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
     st.secrets["huggingface"]["HF_API_KEY_3"],
-    st.secrets["huggingface"]["HF_API_KEY_4"]
+    st.secrets["huggingface"]["HF_API_KEY_4"],
+    st.secrets["huggingface"]["HF_API_KEY_5"]
 ]
 api_key_cycle = cycle(hf_api_keys)
 
-# Caching API Responses
+# Caching API responses to prevent key exhaustion
 @lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
+
     for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
         headers = {"Authorization": f"Bearer {api_key}"}
+
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
+            
             if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
+                wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
+                st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue
+                continue  # Try next key
+
             response.raise_for_status()
             response_data = response.json()
+
             if isinstance(response_data, list) and 'generated_text' in response_data[0]:
                 return response_data[0]['generated_text']
             else:
                 return f"Unexpected response format: {response_data}"
+
         except requests.exceptions.RequestException as e:
             return f"API Error: {e}"
+
     return "Error: All API keys exhausted or failed to respond."
 
-# Fetch Jobs from API
-def fetch_jobs(query):
-    response = requests.get(f"https://api.indeed.com/v2/jobs?q={query}&location=India")
-    return response.json()
+# Function to fetch learning resources using HF API
+def fetch_learning_resources(job_title):
+    prompt = f"List top online courses and learning resources for {job_title}."
+    return get_hf_response(prompt)
 
-# Community Forum
-st.title("Community Forum")
-def post_question(user, question):
-    db.collection("forum_posts").add({"user": user, "question": question, "upvotes": 0})
+# Function to fetch job listings using HF API
+def fetch_job_listings(job_title):
+    prompt = f"List top job openings for {job_title} with company names and links."
+    return get_hf_response(prompt)
 
-def upvote_question(post_id):
-    post_ref = db.collection("forum_posts").document(post_id)
-    post_ref.update({"upvotes": firestore.Increment(1)})
+# Streamlit setup
+st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# Blog Section
-def get_blogs():
-    blogs = db.collection("blogs").stream()
-    return [{"title": blog.to_dict()["title"], "content": blog.to_dict()["content"]} for blog in blogs]
-
-# Dark Mode & Animations
-dark_mode = st.toggle("Dark Mode")
-if dark_mode:
-    st.markdown("""
+# Ferrari-Themed Styling
+st.markdown(
+    """
     <style>
-        body { background-color: black; color: white; }
-        .stButton>button { transition: 0.3s; }
-        .stButton>button:hover { transform: scale(1.05); }
+    body {background-color: #000000; color: white; font-family: 'Arial', sans-serif;}
+    .stTextInput > div > div > input {
+        border: 2px solid red;
+        border-radius: 10px;
+        background-color: #1c1c1c;
+        color: white;
+        padding: 10px;
+    }
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: bold;
+        background: red;
+        color: white;
+        padding: 10px;
+        transition: 0.3s;
+    }
+    .stButton > button:hover {
+        background: yellow;
+        color: black;
+    }
+    h1 {
+        text-align: center;
+        font-size: 50px;
+        color: red;
+        font-weight: bold;
+    }
+    .stTabs {
+        background-color: #1c1c1c;
+        border-radius: 10px;
+        padding: 10px;
+    }
     </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <style>
-        body { background-color: white; color: black; }
-    </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True
+)
+
+# UI with Tabs
+st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
+st.write("Get a structured career roadmap with learning resources tailored to your job title.")
+
+# Tabs
+tab1, tab2, tab3 = st.tabs(["🏁 Career Roadmap", "📚 Resources", "💼 Job Listings"])
+
+with tab1:
+    job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+    submit = st.button("Generate Roadmap")
+    
+    if submit and job_title:
+        input_prompt = f"""
+        You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. Present it in bullet points.
+        """
+        response = get_hf_response(input_prompt)
+        st.subheader("Career Roadmap")
+        with st.expander("See Full Details"):
+            st.markdown(response.replace("\n", "\n\n"))
+        st.success("Roadmap generated successfully.")
+
+with tab2:
+    if job_title:
+        st.subheader("🏎️ Recommended Courses")
+        courses = fetch_learning_resources(job_title)
+        st.markdown(courses.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see recommended courses.")
+
+with tab3:
+    if job_title:
+        st.subheader("🏆 Live Job Listings")
+        jobs = fetch_job_listings(job_title)
+        st.markdown(jobs.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see job listings.")
+
