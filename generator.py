@@ -10,28 +10,32 @@ from functools import lru_cache
 firebaseConfig = {
     "apiKey": st.secrets["firebase"]["apiKey"],
     "authDomain": st.secrets["firebase"]["authDomain"],
-    "projectId": st.secrets["firebase"]["projectId"]
+    "projectId": st.secrets["firebase"]["projectId"],
+    "appId": st.secrets["firebase"]["appId"],
 }
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
 db = firestore.Client()
 
-# Authentication
-st.sidebar.title("Login/Register")
-choice = st.sidebar.selectbox("Login or Sign up", ["Login", "Sign up"])
-email = st.sidebar.text_input("Email")
-password = st.sidebar.text_input("Password", type="password")
-if choice == "Sign up":
-    if st.sidebar.button("Register"):
-        user = auth.create_user_with_email_and_password(email, password)
-        st.success("Account created! Login to continue.")
-if choice == "Login":
-    if st.sidebar.button("Login"):
-        user = auth.sign_in_with_email_and_password(email, password)
-        st.session_state["user"] = user
-        st.success("Login Successful!")
+# Sidebar: Google Sign-In
+st.sidebar.title("Login")
+if "user" not in st.session_state:
+    st.session_state["user"] = None
 
-# Save and Fetch User Data
+if st.sidebar.button("Login with Google"):
+    provider = "google.com"
+    try:
+        user = auth.sign_in_with_popup(provider)  # Google Sign-In
+        st.session_state["user"] = user
+        st.success(f"Logged in as {user['email']}")
+    except Exception as e:
+        st.error(f"Login failed: {e}")
+
+if st.sidebar.button("Logout"):
+    st.session_state["user"] = None
+    st.success("Logged out successfully!")
+
+# Save & Fetch User Data
 def save_roadmap(user_email, roadmap_data):
     db.collection("users").document(user_email).set({"roadmap": roadmap_data})
 
