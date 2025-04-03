@@ -3,3 +3,4 @@ python-dotenv
 langchain 
 functools
 itertools
+fpdf
