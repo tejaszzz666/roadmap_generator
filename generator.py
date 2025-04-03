@@ -1,6 +1,7 @@
 import time
 import requests
 import streamlit as st
+import pandas as pd
 from itertools import cycle
 from functools import lru_cache
 
@@ -45,6 +46,16 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 
     return "Error: All API keys exhausted or failed to respond."
 
+# Function to fetch learning resources using HF API
+def fetch_learning_resources(job_title):
+    prompt = f"List top online courses and learning resources for {job_title}."
+    return get_hf_response(prompt)
+
+# Function to fetch job listings using HF API
+def fetch_job_listings(job_title):
+    prompt = f"List top job openings for {job_title} with company names and links."
+    return get_hf_response(prompt)
+
 # Streamlit setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
@@ -78,11 +89,20 @@ with tab1:
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
             st.markdown(response.replace("\n", "\n\n"))
-        
         st.success("Roadmap generated successfully.")
 
 with tab2:
-    st.write("Additional learning resources will be added here.")
+    if job_title:
+        st.subheader("Recommended Courses")
+        courses = fetch_learning_resources(job_title)
+        st.markdown(courses.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see recommended courses.")
 
 with tab3:
-    st.write("Live job listings will be fetched from APIs here.")
+    if job_title:
+        st.subheader("Live Job Listings")
+        jobs = fetch_job_listings(job_title)
+        st.markdown(jobs.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see job listings.")
