@@ -1,6 +1,6 @@
 # ROADMAP GENERATOR
 
-Welcome to our Roadmap Generator ! This project utilizes GenAI's Gemini model to generate comprehensive roadmaps for various career paths, helping individuals plan their learning journey and providing them with relevant learning resources.
+Welcome to our Roadmap Generator ! This project utilizes Huggig Face API models to generate comprehensive roadmaps for various career paths, helping individuals plan their learning journey and providing them with relevant learning resources.
 
 ## Overview
 
