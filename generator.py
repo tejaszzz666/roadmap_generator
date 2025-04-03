@@ -11,7 +11,6 @@ hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_2"],
     st.secrets["huggingface"]["HF_API_KEY_3"],
     st.secrets["huggingface"]["HF_API_KEY_4"],
-    st.secrets["huggingface"]["HF_API_KEY_5"]
 ]
 api_key_cycle = cycle(hf_api_keys)
 
@@ -28,30 +27,34 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
             response = requests.post(api_url, headers=headers, json={"inputs": question})
             
             if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
+                wait_time = int(response.headers.get("Retry-After", 10))
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue  # Try next key
+                continue  
 
             response.raise_for_status()
             response_data = response.json()
 
             if isinstance(response_data, list) and 'generated_text' in response_data[0]:
-                return response_data[0]['generated_text']
-            else:
-                return f"Unexpected response format: {response_data}"
+                output = response_data[0]['generated_text']
+
+                # Remove echoed prompt if present
+                if output.startswith(question):
+                    output = output[len(question):].strip()
+
+                return output
 
         except requests.exceptions.RequestException as e:
             return f"API Error: {e}"
 
     return "Error: All API keys exhausted or failed to respond."
 
-# Function to fetch learning resources using HF API
+# Function to fetch learning resources
 def fetch_learning_resources(job_title):
-    prompt = f"List top online courses and learning resources for {job_title}."
+    prompt = f"List top online courses and learning resources for {job_title}. Include reference URLs if available."
     return get_hf_response(prompt)
 
-# Function to fetch job listings using HF API
+# Function to fetch job listings
 def fetch_job_listings(job_title):
     prompt = f"List top job openings for {job_title} with company names and links."
     return get_hf_response(prompt)
@@ -110,14 +113,13 @@ with tab1:
     submit = st.button("Generate Roadmap")
     
     if submit and job_title:
-        input_prompt = f"""
-        You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. And also refrence urls.
-        """
+        input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
         response = get_hf_response(input_prompt)
+
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
             st.markdown(response.replace("\n", "\n\n"))
-        st.success("Roadmap generated successfully.")
+        st.success("Roadmap generated successfully. ✅")
 
 with tab2:
     if job_title:
@@ -133,5 +135,4 @@ with tab3:
         jobs = fetch_job_listings(job_title)
         st.markdown(jobs.replace("\n", "\n\n"))
     else:
-        st.write("Enter a job title to see job listings.")
-
+        st.write("Enter a job title to see job listings.")  
