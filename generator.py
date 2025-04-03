@@ -3,6 +3,7 @@ import requests
 import streamlit as st
 from itertools import cycle
 from functools import lru_cache
+from fpdf import FPDF
 
 # Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
@@ -14,7 +15,7 @@ hf_api_keys = [
 api_key_cycle = cycle(hf_api_keys)
 
 # Caching API responses to prevent key exhaustion
-@lru_cache(maxsize=10)
+@lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
 
@@ -24,8 +25,7 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
-
-            # If rate limited, wait and retry
+            
             if response.status_code == 429:
                 wait_time = int(response.headers.get("Retry-After", 10))  # Default wait: 10 sec
                 st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
@@ -48,28 +48,40 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 # Streamlit setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# UI Design
-st.markdown("<h1 style='text-align: center; color: white;'>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
+# Dark Mode Styling
+st.markdown(
+    """
+    <style>
+    body {background-color: #121212; color: white;}
+    .stTextInput, .stButton {border-radius: 10px;}
+    </style>
+    """, unsafe_allow_html=True
+)
+
+# UI with Tabs
+st.markdown("<h1 style='text-align: center;'>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-# Input field
-job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+# Tabs
+tab1, tab2, tab3 = st.tabs(["Career Roadmap", "Resources", "Job Listings"])
 
-# Generate button
-submit = st.button("Generate Roadmap")
+with tab1:
+    job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+    submit = st.button("Generate Roadmap")
+    
+    input_prompt = f"""
+    You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. Present it in bullet points.
+    """
+    
+    if submit:
+        response = get_hf_response(input_prompt)
+        st.subheader("Career Roadmap")
+        with st.expander("See Full Details"):
+            st.markdown(response.replace("\n", "\n\n"))
+        st.success("Roadmap generated successfully.")
 
-# Input prompt template
-input_prompt = """
-You are a career guide. Please provide a professional, step-by-step career roadmap and learning resources available on the internet for the job title: {job_title}. Present the information in bullet points.
-"""
+with tab2:
+    st.write("Additional learning resources will be added here.")
 
-if submit:
-    full_prompt = input_prompt.format(job_title=job_title)
-    response = get_hf_response(full_prompt)
-
-    # Display response
-    st.subheader("Career Roadmap")
-    with st.expander("See Full Details"):
-        st.markdown(response.replace("\n", "\n\n"))
-
-    st.success("Roadmap generated successfully.")
+with tab3:
+    st.write("Live job listings will be fetched from APIs here.")
