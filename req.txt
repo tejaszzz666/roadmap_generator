@@ -1,4 +1,4 @@
 streamlit
 requests
-authlib
+authlib.integrations.requests_client
 pandas
