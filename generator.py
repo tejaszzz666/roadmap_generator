@@ -3,7 +3,7 @@ import requests
 import streamlit as st
 from itertools import cycle
 from functools import lru_cache
-from fpdf import FPDF
+from reportlab.pdfgen import canvas
 
 # Load Hugging Face API keys from Streamlit secrets
 hf_api_keys = [
@@ -46,6 +46,13 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 
     return "Error: All API keys exhausted or failed to respond."
 
+# PDF Generation using ReportLab
+def generate_pdf(content, filename="output.pdf"):
+    c = canvas.Canvas(filename)
+    c.drawString(100, 750, content)  # Basic text placement
+    c.save()
+    return filename
+
 # Streamlit setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
@@ -79,6 +86,12 @@ with tab1:
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
             st.markdown(response.replace("\n", "\n\n"))
+        
+        # Generate PDF
+        pdf_filename = generate_pdf(response)
+        with open(pdf_filename, "rb") as pdf_file:
+            st.download_button(label="Download Roadmap as PDF", data=pdf_file, file_name=pdf_filename, mime="application/pdf")
+        
         st.success("Roadmap generated successfully.")
 
 with tab2:
