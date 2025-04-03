@@ -111,7 +111,7 @@ with tab1:
     
     if submit and job_title:
         input_prompt = f"""
-        You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. Present it in bullet points.
+        You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}.
         """
         response = get_hf_response(input_prompt)
         st.subheader("Career Roadmap")
