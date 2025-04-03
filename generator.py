@@ -64,10 +64,36 @@ st.markdown(
     """
     <style>
     body {background-color: #000000; color: white; font-family: 'Arial', sans-serif;}
-    .stTextInput, .stButton {border-radius: 10px; font-weight: bold; background: red; color: white;}
-    .stButton>button:hover {background: yellow; color: black;}
-    h1 {text-align: center; font-size: 50px; color: red;}
-    .stTabs {background-color: #1c1c1c; border-radius: 10px; padding: 10px;}
+    .stTextInput > div > div > input {
+        border: 2px solid red;
+        border-radius: 10px;
+        background-color: #1c1c1c;
+        color: white;
+        padding: 10px;
+    }
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: bold;
+        background: red;
+        color: white;
+        padding: 10px;
+        transition: 0.3s;
+    }
+    .stButton > button:hover {
+        background: yellow;
+        color: black;
+    }
+    h1 {
+        text-align: center;
+        font-size: 50px;
+        color: red;
+        font-weight: bold;
+    }
+    .stTabs {
+        background-color: #1c1c1c;
+        border-radius: 10px;
+        padding: 10px;
+    }
     </style>
     """, unsafe_allow_html=True
 )
@@ -83,11 +109,10 @@ with tab1:
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
     submit = st.button("Generate Roadmap")
     
-    input_prompt = f"""
-    You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. Present it in bullet points.
-    """
-    
-    if submit:
+    if submit and job_title:
+        input_prompt = f"""
+        You are a career guide. Provide a professional, step-by-step career roadmap and learning resources for {job_title}. Present it in bullet points.
+        """
         response = get_hf_response(input_prompt)
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
