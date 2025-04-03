@@ -6,7 +6,7 @@ from itertools import cycle
 from functools import lru_cache
 from authlib.integrations.requests_client import OAuth2Session
 
-# Load Google OAuth credentials from secrets
+# Load Google OAuth credentials from Streamlit secrets
 GOOGLE_CLIENT_ID = st.secrets["google_oauth"]["client_id"]
 GOOGLE_CLIENT_SECRET = st.secrets["google_oauth"]["client_secret"]
 REDIRECT_URI = st.secrets["google_oauth"]["redirect_uri"]
@@ -18,7 +18,6 @@ USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 # Initialize OAuth2 Session
 oauth = OAuth2Session(
     GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
     redirect_uri=REDIRECT_URI,
     scope=["openid", "email", "profile"]
 )
@@ -34,9 +33,10 @@ api_key_cycle = cycle(hf_api_keys)
 
 @lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
+    """Fetches AI-generated responses from Hugging Face API with key cycling."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     
-    for _ in range(len(hf_api_keys)):
+    for _ in range(len(hf_api_keys)):  # Cycle through all API keys
         api_key = next(api_key_cycle)
         headers = {"Authorization": f"Bearer {api_key}"}
 
@@ -67,13 +67,16 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 def login_with_google():
     auth_url, state = oauth.create_authorization_url(AUTHORIZATION_URL)
     st.session_state["oauth_state"] = state
-    st.session_state["auth_url"] = auth_url
     return auth_url
 
-# Google OAuth callback function
+# Handle OAuth callback and fetch user info
 def fetch_google_user_info():
-    if "oauth_code" in st.session_state:
-        token = oauth.fetch_access_token(TOKEN_URL, authorization_response=st.session_state["oauth_code"])
+    if "oauth_code" in st.query_params:
+        token = oauth.fetch_token(
+            TOKEN_URL,
+            authorization_response=st.query_params["oauth_code"],
+            client_secret=GOOGLE_CLIENT_SECRET
+        )
         user_info = requests.get(USER_INFO_URL, headers={"Authorization": f"Bearer {token['access_token']}"}).json()
         st.session_state["user_info"] = user_info
 
