@@ -1,6 +1,6 @@
 streamlit
-python-dotenv
-langchain 
-functools
-itertools
+requests
+pandas
 fpdf
+pdfminer.six
+plotly
