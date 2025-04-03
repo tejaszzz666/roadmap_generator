@@ -1,6 +1,6 @@
 streamlit
 requests
 pandas
-fpdf
+fpdf==1.7.2
 pdfminer.six
 plotly
