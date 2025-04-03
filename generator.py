@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 from itertools import cycle
 from functools import lru_cache
-from authlib.integrations.requests_client import OAuth2Session
+from authlib import OAuth2Session
 
 # Load Google OAuth credentials from secrets
 GOOGLE_CLIENT_ID = st.secrets["google_oauth"]["client_id"]
