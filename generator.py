@@ -59,22 +59,25 @@ def fetch_job_listings(job_title):
 # Streamlit setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# Dark Mode Styling
+# Ferrari-Themed Styling
 st.markdown(
     """
     <style>
-    body {background-color: #121212; color: white;}
-    .stTextInput, .stButton {border-radius: 10px;}
+    body {background-color: #000000; color: white; font-family: 'Arial', sans-serif;}
+    .stTextInput, .stButton {border-radius: 10px; font-weight: bold; background: red; color: white;}
+    .stButton>button:hover {background: yellow; color: black;}
+    h1 {text-align: center; font-size: 50px; color: red;}
+    .stTabs {background-color: #1c1c1c; border-radius: 10px; padding: 10px;}
     </style>
     """, unsafe_allow_html=True
 )
 
 # UI with Tabs
-st.markdown("<h1 style='text-align: center;'>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
+st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["Career Roadmap", "Resources", "Job Listings"])
+tab1, tab2, tab3 = st.tabs(["🏁 Career Roadmap", "📚 Resources", "💼 Job Listings"])
 
 with tab1:
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
@@ -93,7 +96,7 @@ with tab1:
 
 with tab2:
     if job_title:
-        st.subheader("Recommended Courses")
+        st.subheader("🏎️ Recommended Courses")
         courses = fetch_learning_resources(job_title)
         st.markdown(courses.replace("\n", "\n\n"))
     else:
@@ -101,7 +104,7 @@ with tab2:
 
 with tab3:
     if job_title:
-        st.subheader("Live Job Listings")
+        st.subheader("🏆 Live Job Listings")
         jobs = fetch_job_listings(job_title)
         st.markdown(jobs.replace("\n", "\n\n"))
     else:
