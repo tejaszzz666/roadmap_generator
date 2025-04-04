@@ -19,7 +19,7 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
     """Fetches AI-generated responses from Hugging Face API with key cycling."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     
-    for _ in range(len(hf_api_keys)):  # Cycle through all API keys
+    for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
         headers = {"Authorization": f"Bearer {api_key}"}
 
@@ -49,95 +49,43 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# Ferrari-Themed Styling
-st.markdown(
-    """
-    <style>
-    body {background-color: #000000; color: white; font-family: 'Arial', sans-serif;}
-    .stTextInput > div > div > input {
-        border: 2px solid red;
-        border-radius: 10px;
-        background-color: #1c1c1c;
-        color: white;
-        padding: 10px;
-    }
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: bold;
-        background: red;
-        color: white;
-        padding: 10px;
-        transition: 0.3s;
-    }
-    .stButton > button:hover {
-        background: yellow;
-        color: black;
-    }
-    h1 {
-        text-align: center;
-        font-size: 50px;
-        color: red;
-        font-weight: bold;
-    }
-    .stTabs {
-        background-color: #1c1c1c;
-        border-radius: 10px;
-        padding: 10px;
-    }
-    .nav-container {
-        background: red;
-        padding: 10px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .nav-container a {
-        text-decoration: none;
-        color: white;
-        font-weight: bold;
-        padding: 10px 20px;
-        border-radius: 5px;
-        background: black;
-        margin: 5px;
-    }
-    .nav-container a:hover {
-        background: yellow;
-        color: black;
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# ---- Navigation Bar ----
-st.markdown("""
-<div class='nav-container'>
-    <a href='/?nav=roadmap'>Pre-Generated Roadmaps</a>
-    <a href='/?nav=bestjobs'>Best Earning Jobs</a>
-    <a href='/?nav=contact'>Contact</a>
-</div>
-""", unsafe_allow_html=True)
-
-# ---- Main UI ----
-st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
-st.write("Get a structured career roadmap with learning resources tailored to your job title.")
-
-nav_selection = st.query_params().get("nav", ["home"])[0]
-
-if nav_selection == "roadmap":
-    st.subheader("🏁 Pre-Generated Career Roadmaps")
+if nav_selection == "Pre-Generated Roadmaps":
+    st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
-        "Data Scientist": "Analyze data, learn Python, master ML...",
-        "Software Engineer": "Learn coding, get experience, build projects...",
-        "Cybersecurity Expert": "Understand threats, learn ethical hacking...",
-        "AI Engineer": "Master AI/ML, study deep learning...",
-        "Product Manager": "Develop leadership, understand UX, analyze market...",
+        "Data Scientist": {
+            "roadmap": "1. Learn Python & SQL\n2. Study Data Analysis and Visualization\n3. Master Machine Learning (Scikit-Learn, TensorFlow, PyTorch)\n4. Work on Projects and Kaggle Competitions\n5. Gain Experience & Apply for Jobs",
+            "url": "https://www.coursera.org/specializations/data-science"
+        },
+        "Software Engineer": {
+            "roadmap": "1. Learn Programming (Python, Java, C++)\n2. Understand Data Structures and Algorithms\n3. Build Projects and Contribute to Open Source\n4. Master System Design & Databases\n5. Apply for Internships and Jobs",
+            "url": "https://roadmap.sh/software-engineer"
+        },
+        "Cybersecurity Expert": {
+            "roadmap": "1. Learn Networking and Security Basics\n2. Get Certified (CEH, CISSP, OSCP)\n3. Learn Ethical Hacking and Penetration Testing\n4. Gain Hands-on Experience\n5. Apply for Cybersecurity Roles",
+            "url": "https://www.cybrary.it/"
+        },
+        "AI Engineer": {
+            "roadmap": "1. Learn Python and Deep Learning Frameworks\n2. Master Machine Learning & Neural Networks\n3. Work on AI/ML Projects\n4. Understand Model Deployment & Cloud Platforms\n5. Apply for AI Engineer Roles",
+            "url": "https://www.deeplearning.ai"
+        },
+        "Product Manager": {
+            "roadmap": "1. Learn Business & Market Analysis\n2. Develop Leadership & UX Knowledge\n3. Understand Agile & Scrum Methodologies\n4. Build Roadmaps & Work on Projects\n5. Apply for Product Manager Roles",
+            "url": "https://www.productschool.com/"
+        }
     }
     
-    for job, roadmap in pre_generated.items():
-        with st.expander(f"{job} Roadmap"):
-            st.write(roadmap)
+    for job, details in pre_generated.items():
+        st.subheader(job)
+        st.markdown(details["roadmap"].replace("\n", "\n\n"))
+        st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
+        st.markdown("---")
 
-elif nav_selection == "bestjobs":
-    st.subheader("Best Earning Jobs & Salaries")
+elif nav_selection == "Best Earning Jobs":
+    st.title("Best Earning Jobs & Salaries")
     jobs_data = [
         {"Job Title": "Machine Learning Engineer", "Avg Salary": "$130,000"},
         {"Job Title": "Blockchain Developer", "Avg Salary": "$140,000"},
@@ -148,36 +96,23 @@ elif nav_selection == "bestjobs":
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
-elif nav_selection == "contact":
-    st.subheader("Contact Us")
+elif nav_selection == "Contact":
+    st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Phone: +1 234 567 890")
     st.write("Website: [NextLeap](https://nextleap.com)")
 
 else:
-    # Career Roadmap Generator
-    st.subheader("Generate Your Career Roadmap")
+    st.title("Career Roadmap Generator")
+    st.write("Get a structured career roadmap with learning resources tailored to your job title.")
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
     submit = st.button("Generate Roadmap")
     
     if submit and job_title:
         input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
         response = get_hf_response(input_prompt)
-
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
             st.markdown(response.replace("\n", "\n\n"))
         st.success("Roadmap generated successfully.")
-
-    # Learning Resources
-    st.subheader("Recommended Courses")
-    if job_title:
-        courses = get_hf_response(f"List top online courses and learning resources for {job_title}. Include reference URLs if available.")
-        st.markdown(courses.replace("\n", "\n\n"))
-
-    # Live Job Listings
-    st.subheader("Job Listings")
-    if job_title:
-        jobs = get_hf_response(f"List top job openings for {job_title} with company names and links.")
-        st.markdown(jobs.replace("\n", "\n\n"))
