@@ -4,23 +4,6 @@ import streamlit as st
 import pandas as pd
 from itertools import cycle
 from functools import lru_cache
-from authlib.integrations.requests_client import OAuth2Session
-
-# Load Google OAuth credentials from Streamlit secrets
-GOOGLE_CLIENT_ID = st.secrets["google_oauth"]["client_id"]
-GOOGLE_CLIENT_SECRET = st.secrets["google_oauth"]["client_secret"]
-REDIRECT_URI = st.secrets["google_oauth"]["redirect_uri"]
-
-AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/auth"
-TOKEN_URL = "https://oauth2.googleapis.com/token"
-USER_INFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
-
-# Initialize OAuth2 Session
-oauth = OAuth2Session(
-    GOOGLE_CLIENT_ID,
-    redirect_uri=REDIRECT_URI,
-    scope=["openid", "email", "profile"]
-)
 
 # Load Hugging Face API keys
 hf_api_keys = [
@@ -62,23 +45,6 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
             return f"API Error: {e}"
 
     return "Error: All API keys exhausted or failed to respond."
-
-# Google OAuth login function
-def login_with_google():
-    auth_url, state = oauth.create_authorization_url(AUTHORIZATION_URL)
-    st.session_state["oauth_state"] = state
-    return auth_url
-
-# Handle OAuth callback and fetch user info
-def fetch_google_user_info():
-    if "oauth_code" in st.query_params:
-        token = oauth.fetch_token(
-            TOKEN_URL,
-            authorization_response=st.query_params["oauth_code"],
-            client_secret=GOOGLE_CLIENT_SECRET
-        )
-        user_info = requests.get(USER_INFO_URL, headers={"Authorization": f"Bearer {token['access_token']}"}).json()
-        st.session_state["user_info"] = user_info
 
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
@@ -122,49 +88,38 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Authentication UI
-st.sidebar.title("🔐 Login")
-if "user_info" not in st.session_state:
-    auth_url = login_with_google()
-    st.sidebar.markdown(f"[Login with Google]({auth_url})")
-else:
-    user = st.session_state["user_info"]
-    st.sidebar.image(user["picture"], width=50)
-    st.sidebar.success(f"Welcome, {user['name']}! 👋")
-    st.sidebar.write(f"📧 {user['email']}")
+# ---- Main UI ----
+st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
+st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-    # ---- Main UI ----
-    st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
-    st.write("Get a structured career roadmap with learning resources tailored to your job title.")
+# Tabs
+tab1, tab2, tab3 = st.tabs(["🏁 Career Roadmap", "📚 Resources", "💼 Job Listings"])
 
-    # Tabs
-    tab1, tab2, tab3 = st.tabs(["🏁 Career Roadmap", "📚 Resources", "💼 Job Listings"])
+with tab1:
+    job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+    submit = st.button("Generate Roadmap")
+    
+    if submit and job_title:
+        input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+        response = get_hf_response(input_prompt)
 
-    with tab1:
-        job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
-        submit = st.button("Generate Roadmap")
-        
-        if submit and job_title:
-            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_hf_response(input_prompt)
+        st.subheader("Career Roadmap")
+        with st.expander("See Full Details"):
+            st.markdown(response.replace("\n", "\n\n"))
+        st.success("Roadmap generated successfully. ✅")
 
-            st.subheader("Career Roadmap")
-            with st.expander("See Full Details"):
-                st.markdown(response.replace("\n", "\n\n"))
-            st.success("Roadmap generated successfully. ✅")
+with tab2:
+    if job_title:
+        st.subheader("🏎️ Recommended Courses")
+        courses = get_hf_response(f"List top online courses and learning resources for {job_title}. Include reference URLs if available.")
+        st.markdown(courses.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see recommended courses.")
 
-    with tab2:
-        if job_title:
-            st.subheader("🏎️ Recommended Courses")
-            courses = get_hf_response(f"List top online courses and learning resources for {job_title}. Include reference URLs if available.")
-            st.markdown(courses.replace("\n", "\n\n"))
-        else:
-            st.write("Enter a job title to see recommended courses.")
-
-    with tab3:
-        if job_title:
-            st.subheader("🏆 Live Job Listings")
-            jobs = get_hf_response(f"List top job openings for {job_title} with company names and links.")
-            st.markdown(jobs.replace("\n", "\n\n"))
-        else:
-            st.write("Enter a job title to see job listings.")
+with tab3:
+    if job_title:
+        st.subheader("🏆 Live Job Listings")
+        jobs = get_hf_response(f"List top job openings for {job_title} with company names and links.")
+        st.markdown(jobs.replace("\n", "\n\n"))
+    else:
+        st.write("Enter a job title to see job listings.")
