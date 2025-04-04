@@ -84,18 +84,80 @@ st.markdown(
         border-radius: 10px;
         padding: 10px;
     }
+    .nav-container {
+        background: red;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .nav-container a {
+        text-decoration: none;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 5px;
+        background: black;
+        margin: 5px;
+    }
+    .nav-container a:hover {
+        background: yellow;
+        color: black;
+    }
     </style>
     """, unsafe_allow_html=True
 )
+
+# ---- Navigation Bar ----
+st.markdown("""
+<div class='nav-container'>
+    <a href='/?nav=roadmap'>🏁 Pre-Generated Roadmaps</a>
+    <a href='/?nav=bestjobs'>💰 Best Earning Jobs</a>
+    <a href='/?nav=contact'>📞 Contact</a>
+</div>
+""", unsafe_allow_html=True)
 
 # ---- Main UI ----
 st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🏁 Career Roadmap", "📚 Resources", "💼 Job Listings"])
+nav_selection = st.experimental_get_query_params().get("nav", ["home"])[0]
 
-with tab1:
+if nav_selection == "roadmap":
+    st.subheader("🏁 Pre-Generated Career Roadmaps")
+    pre_generated = {
+        "Data Scientist": "Analyze data, learn Python, master ML...",
+        "Software Engineer": "Learn coding, get experience, build projects...",
+        "Cybersecurity Expert": "Understand threats, learn ethical hacking...",
+        "AI Engineer": "Master AI/ML, study deep learning...",
+        "Product Manager": "Develop leadership, understand UX, analyze market...",
+    }
+    
+    for job, roadmap in pre_generated.items():
+        with st.expander(f"{job} Roadmap"):
+            st.write(roadmap)
+
+elif nav_selection == "bestjobs":
+    st.subheader("💰 Best Earning Jobs & Salaries")
+    jobs_data = [
+        {"Job Title": "Machine Learning Engineer", "Avg Salary": "$130,000"},
+        {"Job Title": "Blockchain Developer", "Avg Salary": "$140,000"},
+        {"Job Title": "Cybersecurity Specialist", "Avg Salary": "$120,000"},
+        {"Job Title": "Cloud Architect", "Avg Salary": "$135,000"},
+        {"Job Title": "AI Researcher", "Avg Salary": "$150,000"},
+    ]
+    df = pd.DataFrame(jobs_data)
+    st.dataframe(df)
+
+elif nav_selection == "contact":
+    st.subheader("📞 Contact Us")
+    st.write("For inquiries, reach out at:")
+    st.write("📧 Email: support@nextleap.com")
+    st.write("📞 Phone: +1 234 567 890")
+    st.write("🌍 Website: [NextLeap](https://nextleap.com)")
+
+else:
+    # Career Roadmap Generator
+    st.subheader("🏁 Generate Your Career Roadmap")
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
     submit = st.button("Generate Roadmap")
     
@@ -108,18 +170,14 @@ with tab1:
             st.markdown(response.replace("\n", "\n\n"))
         st.success("Roadmap generated successfully. ✅")
 
-with tab2:
+    # Learning Resources
+    st.subheader("📚 Recommended Courses")
     if job_title:
-        st.subheader("🏎️ Recommended Courses")
         courses = get_hf_response(f"List top online courses and learning resources for {job_title}. Include reference URLs if available.")
         st.markdown(courses.replace("\n", "\n\n"))
-    else:
-        st.write("Enter a job title to see recommended courses.")
 
-with tab3:
+    # Live Job Listings
+    st.subheader("💼 Job Listings")
     if job_title:
-        st.subheader("🏆 Live Job Listings")
         jobs = get_hf_response(f"List top job openings for {job_title} with company names and links.")
         st.markdown(jobs.replace("\n", "\n\n"))
-    else:
-        st.write("Enter a job title to see job listings.")
