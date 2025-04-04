@@ -125,13 +125,16 @@ else:
             st.success("Roadmap generated successfully.")
             
             with tab2:
+                 st.write("Enter Job Title First")
                 courses = get_hf_response(f"List top online courses for {job_title}.")
                 st.markdown(courses.replace("\n", "\n\n"))
             
             with tab3:
-                jobs = get_hf_response(f"List top job openings for {job_title}.")
+                 st.write("Enter Job Title First")
+                jobs = get_hf_response(f"List top job openings for {job_title}.")            
                 st.markdown(jobs.replace("\n", "\n\n"))
             
             with tab4:
+                 st.write("Enter Job Title First")
                 videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
                 st.markdown(videos.replace("\n", "\n\n"))
