@@ -53,46 +53,70 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Videos"])
 
+# Tabs
 if nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
-        "Data Scientist": {"roadmap": "1. Learn Python, SQL, and R\n2. Study Data Analysis & Visualization\n3. Master ML & Deep Learning\n4. Work on Real-world Projects\n5. Get Certified (Google, IBM, etc.)\n6. Apply for Data Science Jobs", "url": "https://www.coursera.org/specializations/data-science"},
-        "Software Engineer": {"roadmap": "1. Learn Programming (Python, Java, C++)\n2. Study DSA & Competitive Coding\n3. Build Real-world Projects\n4. Master System Design & Databases\n5. Contribute to Open Source\n6. Apply for Tech Jobs", "url": "https://roadmap.sh/software-engineer"},
-        "Cybersecurity Expert": {"roadmap": "1. Learn Networking & Security Basics\n2. Get Certified (CEH, CISSP, OSCP)\n3. Learn Ethical Hacking\n4. Master Threat Analysis & Pentesting\n5. Gain Hands-on Experience\n6. Apply for Cybersecurity Roles", "url": "https://www.cybrary.it/"},
-        "AI Engineer": {"roadmap": "1. Learn Python & AI Frameworks\n2. Master ML & Neural Networks\n3. Work on AI Projects & Research\n4. Understand Model Deployment\n5. Learn Cloud Platforms (AWS, GCP)\n6. Apply for AI Engineer Jobs", "url": "https://www.deeplearning.ai"},
-        "Product Manager": {"roadmap": "1. Learn Business & Market Analysis\n2. Develop Leadership & UX Knowledge\n3. Understand Agile & Scrum\n4. Build Product Roadmaps\n5. Gain Practical Experience\n6. Apply for Product Manager Roles", "url": "https://www.productschool.com/"},
-        "Cloud Engineer": {"roadmap": "1. Learn Cloud Platforms (AWS, Azure, GCP)\n2. Get Certified (AWS, Azure, GCP Certs)\n3. Study DevOps & Kubernetes\n4. Master CI/CD Pipelines\n5. Work on Cloud Projects\n6. Apply for Cloud Engineering Jobs", "url": "https://cloud.google.com/training"}
+        "Data Scientist": {
+            "roadmap": "1. Learn Python & SQL\n2. Study Data Analysis and Visualization\n3. Master Machine Learning (Scikit-Learn, TensorFlow, PyTorch)\n4. Work on Projects and Kaggle Competitions\n5. Gain Experience & Apply for Jobs",
+            "url": "https://www.coursera.org/specializations/data-science",
+            "video": "https://www.youtube.com/watch?v=ua-CiDNNj30"
+        },
+        "Software Engineer": {
+            "roadmap": "1. Learn Programming (Python, Java, C++)\n2. Understand Data Structures and Algorithms\n3. Build Projects and Contribute to Open Source\n4. Master System Design & Databases\n5. Apply for Internships and Jobs",
+            "url": "https://roadmap.sh/software-engineer",
+            "video": "https://www.youtube.com/watch?v=mrHNSanmqQ4"
+        },
     }
     
     for job, details in pre_generated.items():
         st.subheader(job)
         st.markdown(details["roadmap"].replace("\n", "\n\n"))
         st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
+        st.video(details["video"])
         st.markdown("---")
 
 elif nav_selection == "Best Earning Jobs":
     st.title("Best Earning Jobs & Salaries")
     jobs_data = [
-        {"Job Title": "Machine Learning Engineer", "Avg Salary (USD)": "$130,000", "Avg Salary (INR)": "₹1.1 Crore"},
-        {"Job Title": "Blockchain Developer", "Avg Salary (USD)": "$140,000", "Avg Salary (INR)": "₹1.2 Crore"},
-        {"Job Title": "Cybersecurity Specialist", "Avg Salary (USD)": "$120,000", "Avg Salary (INR)": "₹99 Lakh"},
-        {"Job Title": "Cloud Architect", "Avg Salary (USD)": "$135,000", "Avg Salary (INR)": "₹1.15 Crore"},
-        {"Job Title": "AI Researcher", "Avg Salary (USD)": "$150,000", "Avg Salary (INR)": "₹1.25 Crore"},
-        {"Job Title": "DevOps Engineer", "Avg Salary (USD)": "$125,000", "Avg Salary (INR)": "₹1.05 Crore"},
+        {"Job Title": "Machine Learning Engineer", "Avg Salary": "$130,000"},
+        {"Job Title": "Blockchain Developer", "Avg Salary": "$140,000"},
     ]
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
 elif nav_selection == "Contact":
     st.title("Contact Us")
-    st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Phone: +1 234 567 890")
     st.write("Website: [NextLeap](https://nextleap.com)")
 
 elif nav_selection == "Videos":
     st.title("Career Guidance Videos")
-    st.video("https://www.youtube.com/watch?v=video1")
-    st.video("https://www.youtube.com/watch?v=video2")
-    st.video("https://www.youtube.com/watch?v=video3")
-    st.video("https://www.youtube.com/watch?v=video4")
+    if "video_links" in st.session_state:
+        for link in st.session_state["video_links"]:
+            st.video(link)
+    else:
+        st.write("Generate a roadmap to see relevant videos.")
+
+else:
+    st.title("Career Roadmap Generator")
+    job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+    submit = st.button("Generate Roadmap")
+    
+    if submit and job_title:
+        input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+        response = get_hf_response(input_prompt)
+        
+        st.subheader("Career Roadmap")
+        with st.expander("See Full Details"):
+            st.markdown(response.replace("\n", "\n\n"))
+        st.success("Roadmap generated successfully.")
+
+        # Fetch YouTube Video Links
+        video_prompt = f"List 3-4 best YouTube video links for career guidance in {job_title}."
+        video_response = get_hf_response(video_prompt)
+        video_links = [link.strip() for link in video_response.split("\n") if link.startswith("http")]
+        
+        # Store videos in session state
+        st.session_state["video_links"] = video_links
