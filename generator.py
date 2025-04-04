@@ -120,7 +120,7 @@ st.markdown("""
 st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-nav_selection = st.experimental_get_query_params().get("nav", ["home"])[0]
+nav_selection = st.query_params().get("nav", ["home"])[0]
 
 if nav_selection == "roadmap":
     st.subheader("🏁 Pre-Generated Career Roadmaps")
