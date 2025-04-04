@@ -107,7 +107,7 @@ elif nav_selection == "Contact":
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
 else:
-    st.title("Career Roadmap Generator")
+    st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
     
