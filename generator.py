@@ -110,9 +110,9 @@ st.markdown(
 # ---- Navigation Bar ----
 st.markdown("""
 <div class='nav-container'>
-    <a href='/?nav=roadmap'>🏁 Pre-Generated Roadmaps</a>
-    <a href='/?nav=bestjobs'>💰 Best Earning Jobs</a>
-    <a href='/?nav=contact'>📞 Contact</a>
+    <a href='/?nav=roadmap'>Pre-Generated Roadmaps</a>
+    <a href='/?nav=bestjobs'>Best Earning Jobs</a>
+    <a href='/?nav=contact'>Contact</a>
 </div>
 """, unsafe_allow_html=True)
 
@@ -120,7 +120,7 @@ st.markdown("""
 st.markdown("<h1>NextLeap: Career Roadmap Generator</h1>", unsafe_allow_html=True)
 st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-nav_selection = st.experimental_get_query_params().get("nav", ["home"])[0]
+nav_selection = st.get_query_params().get("nav", ["home"])[0]
 
 if nav_selection == "roadmap":
     st.subheader("🏁 Pre-Generated Career Roadmaps")
@@ -137,7 +137,7 @@ if nav_selection == "roadmap":
             st.write(roadmap)
 
 elif nav_selection == "bestjobs":
-    st.subheader("💰 Best Earning Jobs & Salaries")
+    st.subheader("Best Earning Jobs & Salaries")
     jobs_data = [
         {"Job Title": "Machine Learning Engineer", "Avg Salary": "$130,000"},
         {"Job Title": "Blockchain Developer", "Avg Salary": "$140,000"},
@@ -149,15 +149,15 @@ elif nav_selection == "bestjobs":
     st.dataframe(df)
 
 elif nav_selection == "contact":
-    st.subheader("📞 Contact Us")
+    st.subheader("Contact Us")
     st.write("For inquiries, reach out at:")
-    st.write("📧 Email: support@nextleap.com")
-    st.write("📞 Phone: +1 234 567 890")
-    st.write("🌍 Website: [NextLeap](https://nextleap.com)")
+    st.write("Email: support@nextleap.com")
+    st.write("Phone: +1 234 567 890")
+    st.write("Website: [NextLeap](https://nextleap.com)")
 
 else:
     # Career Roadmap Generator
-    st.subheader("🏁 Generate Your Career Roadmap")
+    st.subheader("Generate Your Career Roadmap")
     job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
     submit = st.button("Generate Roadmap")
     
@@ -168,16 +168,16 @@ else:
         st.subheader("Career Roadmap")
         with st.expander("See Full Details"):
             st.markdown(response.replace("\n", "\n\n"))
-        st.success("Roadmap generated successfully. ✅")
+        st.success("Roadmap generated successfully.")
 
     # Learning Resources
-    st.subheader("📚 Recommended Courses")
+    st.subheader("Recommended Courses")
     if job_title:
         courses = get_hf_response(f"List top online courses and learning resources for {job_title}. Include reference URLs if available.")
         st.markdown(courses.replace("\n", "\n\n"))
 
     # Live Job Listings
-    st.subheader("💼 Job Listings")
+    st.subheader("Job Listings")
     if job_title:
         jobs = get_hf_response(f"List top job openings for {job_title} with company names and links.")
         st.markdown(jobs.replace("\n", "\n\n"))
