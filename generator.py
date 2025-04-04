@@ -104,8 +104,7 @@ elif nav_selection == "Contact":
     st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
-    st.write("Phone: +1 234 567 890")
-    st.write("Website: [NextLeap](https://nextleap.com)")
+    st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
 else:
     st.title("Career Roadmap Generator")
