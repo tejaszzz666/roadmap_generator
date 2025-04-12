@@ -11,6 +11,7 @@ hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_2"],
     st.secrets["huggingface"]["HF_API_KEY_3"],
     st.secrets["huggingface"]["HF_API_KEY_4"],
+    st.secrets["huggingface"]["HF_API_KEY_5"]
 ]
 api_key_cycle = cycle(hf_api_keys)
 
