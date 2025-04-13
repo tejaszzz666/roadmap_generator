@@ -73,9 +73,8 @@ def create_user_profile():
         st.success("Profile saved successfully!")
 
 # --- Show Profile Setup or Edit Profile ---
-if not st.session_state.user_profile:
-    create_user_profile()
-else:
+def show_user_profile():
+    """Display the user profile"""
     st.subheader("User Profile")
     st.write(f"Name: {st.session_state.user_profile['name']}")
     st.write(f"Job Title: {st.session_state.user_profile['job_title']}")
@@ -86,11 +85,17 @@ else:
     if st.button("Edit Profile"):
         create_user_profile()
 
-# Sidebar Navigation
+# --- Sidebar Navigation ---
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# Pre-Generated Roadmaps
+# User Profile Display at the top of Sidebar
+if not st.session_state.user_profile:
+    create_user_profile()
+else:
+    show_user_profile()
+
+# --- Pre-Generated Roadmaps ---
 if nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
@@ -114,7 +119,7 @@ if nav_selection == "Pre-Generated Roadmaps":
         st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
         st.markdown("---")
 
-# Best Earning Jobs
+# --- Best Earning Jobs ---
 elif nav_selection == "Best Earning Jobs":
     st.title("Best Earning Jobs & Salaries")
     jobs_data = [
@@ -127,34 +132,33 @@ elif nav_selection == "Best Earning Jobs":
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
-# Contact Page
+# --- Contact Page ---
 elif nav_selection == "Contact":
     st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
-# Career Roadmap Generator
+# --- Career Roadmap Generator ---
 else:
     st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
+    
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Skill Assessment", "Recommended Courses", "Live Job Listings"])
 
     # Tab 1: Career Roadmap Generator
-  # In the "Career Roadmap Generator" tab
-with tab1:
-    job_title = st.text_input("Enter the job title:", key="job_title_input", placeholder="e.g., Data Scientist")
-    submit = st.button("Generate Roadmap", key="submit_button")
-    
-    if submit and job_title:
-        input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-        response = get_hf_response(input_prompt)
-        st.subheader("Career Roadmap")
-        with st.expander("See Full Details"):
-            st.markdown(response.replace("\n", "\n\n"))
-        st.success("Roadmap generated successfully.")
+    with tab1:
+        job_title = st.text_input("Enter the job title:", key="job_title_input", placeholder="e.g., Data Scientist")
+        submit = st.button("Generate Roadmap", key="submit_button")
+        
+        if submit and job_title:
+            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+            response = get_hf_response(input_prompt)
+            st.subheader("Career Roadmap")
+            with st.expander("See Full Details"):
+                st.markdown(response.replace("\n", "\n\n"))
+            st.success("Roadmap generated successfully.")
 
-    
     # Tab 2: Skill Assessment (Read from the profile)
     with tab2:
         st.subheader("Skill Assessment")
