@@ -5,7 +5,7 @@ import pandas as pd
 from itertools import cycle
 from functools import lru_cache
 
-# Load Hugging Face API keys
+# --- Load API Keys ---
 hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
@@ -17,7 +17,7 @@ api_key_cycle = cycle(hf_api_keys)
 
 @lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
-    """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
+    """Fetch AI-generated responses from Hugging Face API."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     headers_template = lambda key: {"Authorization": f"Bearer {key}"}
     
@@ -27,17 +27,6 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
-            
-            if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
-                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
-                time.sleep(wait_time)
-                continue
-
-            elif response.status_code == 402:
-                st.warning(f"Key with payment issue (402), skipping...")
-                continue
-
             response.raise_for_status()
             response_data = response.json()
 
@@ -56,73 +45,14 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 
     return "❌ All API keys failed or quota exhausted."
 
-# Streamlit UI
+# --- Streamlit UI ---
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
 # Sidebar Navigation
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-def get_user_profile():
-    """Allow users to input their career details."""
-    st.sidebar.title("User Profile")
-    
-    user_name = st.sidebar.text_input("Enter your name:", "")
-    user_skills = st.sidebar.text_area("List your current skills (e.g., Python, Data Science, etc.):", "")
-    user_goals = st.sidebar.text_area("What are your career goals?", "")
-    
-    if st.sidebar.button("Save Profile"):
-        st.session_state.user_profile = {
-            "name": user_name,
-            "skills": user_skills,
-            "goals": user_goals
-        }
-        st.sidebar.success("Profile saved!")
-    
-    return user_name, user_skills, user_goals
-
-def skill_assessment():
-    """Assess the user's skills and recommend learning paths."""
-    st.title("Skill Assessment")
-    st.write("Answer the following questions to assess your skills:")
-    
-    python_skill = st.radio("How would you rate your Python skills?", ["Beginner", "Intermediate", "Advanced"])
-    data_science_skill = st.radio("How would you rate your Data Science skills?", ["Beginner", "Intermediate", "Advanced"])
-    
-    if st.button("Submit"):
-        st.session_state.skills_assessment = {
-            "python": python_skill,
-            "data_science": data_science_skill
-        }
-        st.write("Assessment complete!")
-        # Adjust roadmap based on answers
-
-# User Profile & Skill Assessment
-if "user_profile" not in st.session_state:
-    get_user_profile()
-
-if "skills_assessment" not in st.session_state:
-    skill_assessment()
-
-# Job Listings from API
-def get_job_listings(job_title):
-    """Fetch job listings for the given job title."""
-    url = f"https://api.indeed.com/v2/jobs?title={job_title}"  # Replace with real API
-    response = requests.get(url)
-    job_data = response.json()
-    
-    jobs = []
-    for job in job_data['jobs']:
-        jobs.append({
-            "Title": job['title'],
-            "Company": job['company'],
-            "Location": job['location'],
-            "Link": job['url']
-        })
-    
-    return jobs
-
-# Streamlit UI for Each Page
+# Pre-Generated Roadmaps
 if nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
@@ -134,30 +64,19 @@ if nav_selection == "Pre-Generated Roadmaps":
             "roadmap": "1. Learn Programming (Python, Java, C++)\n2. Understand Data Structures and Algorithms\n3. Build Projects and Contribute to Open Source\n4. Master System Design & Databases\n5. Apply for Internships and Jobs",
             "url": "https://roadmap.sh/software-engineer"
         },
-        "Cybersecurity Expert": {
-            "roadmap": "1. Learn Networking and Security Basics\n2. Get Certified (CEH, CISSP, OSCP)\n3. Learn Ethical Hacking and Penetration Testing\n4. Gain Hands-on Experience\n5. Apply for Cybersecurity Roles",
-            "url": "https://www.cybrary.it/"
-        },
         "AI Engineer": {
             "roadmap": "1. Learn Python and Deep Learning Frameworks\n2. Master Machine Learning & Neural Networks\n3. Work on AI/ML Projects\n4. Understand Model Deployment & Cloud Platforms\n5. Apply for AI Engineer Roles",
             "url": "https://www.deeplearning.ai"
-        },
-        "Product Manager": {
-            "roadmap": "1. Learn Business & Market Analysis\n2. Develop Leadership & UX Knowledge\n3. Understand Agile & Scrum Methodologies\n4. Build Roadmaps & Work on Projects\n5. Apply for Product Manager Roles",
-            "url": "https://www.productschool.com/"
-        },
-        "Cloud Engineer": {
-            "roadmap": "1. Learn Cloud Platforms (AWS, Azure, GCP)\n2. Master Networking & Security\n3. Understand DevOps & Infrastructure as Code\n4. Gain Certifications\n5. Apply for Cloud Engineer Roles",
-            "url": "https://cloud.google.com/training"
         }
     }
-    
+
     for job, details in pre_generated.items():
         st.subheader(job)
         st.markdown(details["roadmap"].replace("\n", "\n\n"))
         st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
         st.markdown("---")
 
+# Best Earning Jobs
 elif nav_selection == "Best Earning Jobs":
     st.title("Best Earning Jobs & Salaries")
     jobs_data = [
@@ -170,17 +89,20 @@ elif nav_selection == "Best Earning Jobs":
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
+# Contact Page
 elif nav_selection == "Contact":
     st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
+# Career Roadmap Generator
 else:
     st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
-    tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
-    
+    tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Skill Assessment", "Recommended Courses", "Live Job Listings"])
+
+    # Tab 1: Career Roadmap Generator
     with tab1:
         job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
         submit = st.button("Generate Roadmap")
@@ -192,15 +114,25 @@ else:
             with st.expander("See Full Details"):
                 st.markdown(response.replace("\n", "\n\n"))
             st.success("Roadmap generated successfully.")
-            
-            with tab2:
-                courses = get_hf_response(f"List top online courses for {job_title}.")
-                st.markdown(courses.replace("\n", "\n\n"))
-            
-            with tab3:
-                jobs = get_hf_response(f"List top job openings for {job_title}.")            
-                st.markdown(jobs.replace("\n", "\n\n"))
-            
-            with tab4:
-                videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
-                st.markdown(videos.replace("\n", "\n\n"))
+    
+    # Tab 2: Skill Assessment
+    with tab2:
+        st.subheader("Skill Assessment")
+        skill_level = st.radio("How proficient are you in the following skills?", 
+                               ["Beginner", "Intermediate", "Advanced"], key="skill_level")
+        st.write(f"Your skill level: {skill_level}")
+        st.write("This helps us understand your current capabilities and suggests the best resources.")
+
+    # Tab 3: Recommended Courses
+    with tab3:
+        if job_title:
+            courses = get_hf_response(f"List top online courses for {job_title}.")
+            st.subheader("Recommended Courses")
+            st.markdown(courses.replace("\n", "\n\n"))
+    
+    # Tab 4: Live Job Listings
+    with tab4:
+        if job_title:
+            jobs = get_hf_response(f"List top job openings for {job_title}.")            
+            st.subheader("Live Job Listings")
+            st.markdown(jobs.replace("\n", "\n\n"))
