@@ -35,7 +35,7 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
                 continue
 
             elif response.status_code == 402:
-                st.warning(f"Key with payment issue (402), skipping...")
+                st.warning(f"Key with payment issue (402), skipping this key...")
                 continue
 
             response.raise_for_status()
@@ -184,7 +184,11 @@ else:
                     ai_response = get_hf_response(
                         f"Provide a professional, step-by-step career roadmap for {user_input}. Include reference URLs if available."
                     )
-                st.session_state.chat_history.append({"role": "assistant", "message": ai_response})
+                    # Check if AI response is empty or not
+                    if ai_response:
+                        st.session_state.chat_history.append({"role": "assistant", "message": ai_response})
+                    else:
+                        st.session_state.chat_history.append({"role": "assistant", "message": "Sorry, I couldn't generate a response."})
 
     # --- Additional tabs use similar logic ---
     with tab2:
@@ -207,9 +211,4 @@ else:
 
     with tab4:
         if st.session_state.get("chat_history"):
-            job_title = st.session_state.chat_history[-1]["message"]
-            videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
-            st.subheader("Career Videos")
-            st.markdown(videos.replace("\n", "\n\n"))
-        else:
-            st.info("Ask a career-related question in the first tab to get video suggestions.")
+            job_title =
