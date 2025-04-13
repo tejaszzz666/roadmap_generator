@@ -35,7 +35,7 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
                 continue
 
             elif response.status_code == 402:
-                # Silent skip on payment issue, no warning message
+                st.warning(f"Key with payment issue (402), skipping...")
                 continue
 
             response.raise_for_status()
@@ -63,6 +63,66 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
+def get_user_profile():
+    """Allow users to input their career details."""
+    st.sidebar.title("User Profile")
+    
+    user_name = st.sidebar.text_input("Enter your name:", "")
+    user_skills = st.sidebar.text_area("List your current skills (e.g., Python, Data Science, etc.):", "")
+    user_goals = st.sidebar.text_area("What are your career goals?", "")
+    
+    if st.sidebar.button("Save Profile"):
+        st.session_state.user_profile = {
+            "name": user_name,
+            "skills": user_skills,
+            "goals": user_goals
+        }
+        st.sidebar.success("Profile saved!")
+    
+    return user_name, user_skills, user_goals
+
+def skill_assessment():
+    """Assess the user's skills and recommend learning paths."""
+    st.title("Skill Assessment")
+    st.write("Answer the following questions to assess your skills:")
+    
+    python_skill = st.radio("How would you rate your Python skills?", ["Beginner", "Intermediate", "Advanced"])
+    data_science_skill = st.radio("How would you rate your Data Science skills?", ["Beginner", "Intermediate", "Advanced"])
+    
+    if st.button("Submit"):
+        st.session_state.skills_assessment = {
+            "python": python_skill,
+            "data_science": data_science_skill
+        }
+        st.write("Assessment complete!")
+        # Adjust roadmap based on answers
+
+# User Profile & Skill Assessment
+if "user_profile" not in st.session_state:
+    get_user_profile()
+
+if "skills_assessment" not in st.session_state:
+    skill_assessment()
+
+# Job Listings from API
+def get_job_listings(job_title):
+    """Fetch job listings for the given job title."""
+    url = f"https://api.indeed.com/v2/jobs?title={job_title}"  # Replace with real API
+    response = requests.get(url)
+    job_data = response.json()
+    
+    jobs = []
+    for job in job_data['jobs']:
+        jobs.append({
+            "Title": job['title'],
+            "Company": job['company'],
+            "Location": job['location'],
+            "Link": job['url']
+        })
+    
+    return jobs
+
+# Streamlit UI for Each Page
 if nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
