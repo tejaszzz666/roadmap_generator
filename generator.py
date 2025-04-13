@@ -121,10 +121,36 @@ st.markdown(sidebar_style, unsafe_allow_html=True)
 if 'nav_selection' not in st.session_state:
     st.session_state.nav_selection = "Home"
 
-nav_selection = st.sidebar.radio("Go to:", ["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"], index=["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"].index(st.session_state.nav_selection))
+# Use radio button to choose navigation and set it in session state
+nav_selection = st.sidebar.radio("Go to:", 
+                                 ["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"], 
+                                 index=["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"].index(st.session_state.nav_selection))
 
 # Update selected page to session state
 st.session_state.nav_selection = nav_selection
+
+# Show content based on the selected page
+if nav_selection == "User Profile":
+    if not st.session_state.user_profile:
+        create_user_profile()
+    else:
+        display_user_profile()
+
+elif nav_selection == "Pre-Generated Roadmaps":
+    st.title("Pre-Generated Career Roadmaps")
+    # ... (Rest of the Pre-Generated Roadmaps content)
+
+elif nav_selection == "Best Earning Jobs":
+    st.title("Best Earning Jobs & Salaries")
+    # ... (Rest of the Best Earning Jobs content)
+
+elif nav_selection == "Contact":
+    st.title("Contact Us")
+    # ... (Rest of the Contact content)
+
+elif nav_selection == "Home":
+    st.title("NextLeap : Career Roadmap Generator")
+    # ... (Rest of the Home page content with tabs)
 
 # User Profile Page in Sidebar
 if nav_selection == "User Profile":
