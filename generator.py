@@ -73,8 +73,8 @@ def create_user_profile():
         st.success("Profile saved successfully!")
 
 # --- Show Profile Setup or Edit Profile ---
-def show_user_profile():
-    """Display the user profile"""
+def display_user_profile():
+    """Display user profile information"""
     st.subheader("User Profile")
     st.write(f"Name: {st.session_state.user_profile['name']}")
     st.write(f"Job Title: {st.session_state.user_profile['job_title']}")
@@ -85,18 +85,19 @@ def show_user_profile():
     if st.button("Edit Profile"):
         create_user_profile()
 
-# --- Sidebar Navigation ---
+# Sidebar Navigation
 st.sidebar.title("Navigation")
-nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
+nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "User Profile"])
 
-# User Profile Display at the top of Sidebar
-if not st.session_state.user_profile:
-    create_user_profile()
-else:
-    show_user_profile()
+# User Profile Page in Sidebar
+if nav_selection == "User Profile":
+    if not st.session_state.user_profile:
+        create_user_profile()
+    else:
+        display_user_profile()
 
-# --- Pre-Generated Roadmaps ---
-if nav_selection == "Pre-Generated Roadmaps":
+# Pre-Generated Roadmaps
+elif nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
         "Data Scientist": {
@@ -119,7 +120,7 @@ if nav_selection == "Pre-Generated Roadmaps":
         st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
         st.markdown("---")
 
-# --- Best Earning Jobs ---
+# Best Earning Jobs
 elif nav_selection == "Best Earning Jobs":
     st.title("Best Earning Jobs & Salaries")
     jobs_data = [
@@ -132,18 +133,17 @@ elif nav_selection == "Best Earning Jobs":
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
-# --- Contact Page ---
+# Contact Page
 elif nav_selection == "Contact":
     st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
-# --- Career Roadmap Generator ---
+# Career Roadmap Generator
 else:
     st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
-    
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Skill Assessment", "Recommended Courses", "Live Job Listings"])
 
     # Tab 1: Career Roadmap Generator
@@ -160,28 +160,24 @@ else:
             st.success("Roadmap generated successfully.")
 
     # Tab 2: Skill Assessment (Read from the profile)
-   # --- Skill Assessment Tab ---
-with tab2:
-    st.subheader("Skill Assessment")
-    
-    # Check if user profile exists and contains the necessary keys
-    if 'skill_level_python' in st.session_state.user_profile:
-        st.write(f"Your Python skill level: {st.session_state.user_profile['skill_level_python']}")
-    else:
-        st.write("Python skill level: Not set")
-    
-    if 'skill_level_data_science' in st.session_state.user_profile:
-        st.write(f"Your Data Science skill level: {st.session_state.user_profile['skill_level_data_science']}")
-    else:
-        st.write("Data Science skill level: Not set")
-    
-    if 'skill_level_cloud_computing' in st.session_state.user_profile:
-        st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
-    else:
-        st.write("Cloud Computing skill level: Not set")
-    
-    st.write("Based on your profile, we suggest you look into these specific learning resources.")
+    with tab2:
+        st.subheader("Skill Assessment")
+        if 'skill_level_python' in st.session_state.user_profile:
+            st.write(f"Your Python skill level: {st.session_state.user_profile['skill_level_python']}")
+        else:
+            st.write("Python skill level: Not set")
 
+        if 'skill_level_data_science' in st.session_state.user_profile:
+            st.write(f"Your Data Science skill level: {st.session_state.user_profile['skill_level_data_science']}")
+        else:
+            st.write("Data Science skill level: Not set")
+
+        if 'skill_level_cloud_computing' in st.session_state.user_profile:
+            st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
+        else:
+            st.write("Cloud Computing skill level: Not set")
+
+        st.write("Based on your profile, we suggest you look into these specific learning resources.")
 
     # Tab 3: Recommended Courses
     with tab3:
