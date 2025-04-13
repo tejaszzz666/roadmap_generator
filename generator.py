@@ -52,7 +52,7 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 if 'user_profile' not in st.session_state:
     st.session_state.user_profile = {}
 
-# User Profile Setup
+# --- Profile Information Section ---
 def create_user_profile():
     """Set up the user profile for the first time"""
     st.subheader("User Profile Setup")
@@ -63,7 +63,6 @@ def create_user_profile():
     skill_level_cloud_computing = st.radio("How proficient are you in Cloud Computing?", ["Beginner", "Intermediate", "Advanced"], key="skill_cloud_computing")
     
     if st.button("Save Profile"):
-        # Save the profile information to session state
         st.session_state.user_profile = {
             "name": name,
             "job_title": job_title,
@@ -73,19 +72,9 @@ def create_user_profile():
         }
         st.success("Profile saved successfully!")
         
-        # Set a flag to indicate profile is saved
-        st.session_state.profile_saved = True
-        
-        # Redirect to Home page after saving
-        st.experimental_rerun()
-
-# --- Show Profile Setup or Edit Profile ---
-if 'profile_saved' in st.session_state and st.session_state.profile_saved:
-    # After the profile is saved, you can redirect to the Home page
-    st.session_state.profile_saved = False  # Reset the flag
-    st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "User Profile"], index=0)
-else:
-    create_user_profile()
+        # Redirect to the Home page after saving the profile
+        st.session_state.nav_selection = "Home"
+        st.experimental_rerun()  # Rerun to update the page
 
 # --- Show Profile Setup or Edit Profile ---
 def display_user_profile():
@@ -224,7 +213,8 @@ elif nav_selection == "Home":
             st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
         else:
             st.write("Cloud Computing skill level: Not set")
- # Tab 3: Recommended Courses
+
+    # Tab 3: Recommended Courses
     with tab3:
         if job_title:
             courses = get_hf_response(f"List top online courses for {job_title}.")
