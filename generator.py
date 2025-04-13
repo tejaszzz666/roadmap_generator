@@ -211,4 +211,9 @@ else:
 
     with tab4:
         if st.session_state.get("chat_history"):
-            job_title =
+            job_title = st.session_state.chat_history[-1]["message"]
+            videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
+            st.subheader("Career Videos")
+            st.markdown(videos.replace("\n", "\n\n"))
+        else:
+            st.info("Ask a career-related question in the first tab to get video suggestions.")
