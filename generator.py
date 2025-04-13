@@ -35,7 +35,7 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
                 continue
 
             elif response.status_code == 402:
-                st.warning(f"Key with payment issue (402), skipping...")
+                # Silent skip on payment issue, no warning message
                 continue
 
             response.raise_for_status()
@@ -138,11 +138,9 @@ else:
                 st.markdown(courses.replace("\n", "\n\n"))
             
             with tab3:
-          
                 jobs = get_hf_response(f"List top job openings for {job_title}.")            
                 st.markdown(jobs.replace("\n", "\n\n"))
             
             with tab4:
-            
                 videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
                 st.markdown(videos.replace("\n", "\n\n"))
