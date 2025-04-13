@@ -152,13 +152,6 @@ elif nav_selection == "Home":
     st.title("NextLeap : Career Roadmap Generator")
     # ... (Rest of the Home page content with tabs)
 
-# User Profile Page in Sidebar
-if nav_selection == "User Profile":
-    if not st.session_state.user_profile:
-        create_user_profile()
-    else:
-        display_user_profile()
-
 # Pre-Generated Roadmaps
 elif nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
