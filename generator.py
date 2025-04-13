@@ -71,6 +71,10 @@ def create_user_profile():
             "skill_level_cloud_computing": skill_level_cloud_computing
         }
         st.success("Profile saved successfully!")
+        
+        # Redirect to the Home page after saving the profile
+        st.session_state.nav_selection = "Home"
+        st.experimental_rerun()  # Rerun to update the page
 
 # --- Show Profile Setup or Edit Profile ---
 def display_user_profile():
@@ -114,7 +118,13 @@ sidebar_style = """
 st.markdown(sidebar_style, unsafe_allow_html=True)
 
 # Reordered Navigation in Sidebar
-nav_selection = st.sidebar.radio("Go to:", ["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"])
+if 'nav_selection' not in st.session_state:
+    st.session_state.nav_selection = "Home"
+
+nav_selection = st.sidebar.radio("Go to:", ["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"], index=["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"].index(st.session_state.nav_selection))
+
+# Update selected page to session state
+st.session_state.nav_selection = nav_selection
 
 # User Profile Page in Sidebar
 if nav_selection == "User Profile":
@@ -203,16 +213,13 @@ elif nav_selection == "Home":
             st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
         else:
             st.write("Cloud Computing skill level: Not set")
-
-        st.write("Based on your profile, we suggest you look into these specific learning resources.")
-
-    # Tab 3: Recommended Courses
+ # Tab 3: Recommended Courses
     with tab3:
         if job_title:
             courses = get_hf_response(f"List top online courses for {job_title}.")
             st.subheader("Recommended Courses")
             st.markdown(courses.replace("\n", "\n\n"))
-    
+
     # Tab 4: Live Job Listings
     with tab4:
         if job_title:
