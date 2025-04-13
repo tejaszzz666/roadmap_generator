@@ -5,7 +5,7 @@ import pandas as pd
 from itertools import cycle
 from functools import lru_cache
 
-# --- API Setup ---
+# Load Hugging Face API keys
 hf_api_keys = [
     st.secrets["huggingface"]["HF_API_KEY_1"],
     st.secrets["huggingface"]["HF_API_KEY_2"],
@@ -17,26 +17,21 @@ api_key_cycle = cycle(hf_api_keys)
 
 @lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
-    """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
+    """Fetches AI-generated responses from Hugging Face API with key cycling."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    headers_template = lambda key: {"Authorization": f"Bearer {key}"}
     
     for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
-        headers = headers_template(api_key)
+        headers = {"Authorization": f"Bearer {api_key}"}
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
             
             if response.status_code == 429:
                 wait_time = int(response.headers.get("Retry-After", 10))
-                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
+                st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                continue
-
-            elif response.status_code == 402:
-                st.warning(f"Key with payment issue (402), skipping this key...")
-                continue
+                continue  
 
             response.raise_for_status()
             response_data = response.json()
@@ -46,58 +41,19 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
                 if output.startswith(question):
                     output = output[len(question):].strip()
                 return output
-            else:
-                st.warning(f"Unexpected response format: {response_data}")
-                continue
 
         except requests.exceptions.RequestException as e:
-            st.warning(f"Error with API key: {api_key[:5]}... — {e}")
-            continue
+            return f"API Error: {e}"
 
-    return "❌ All API keys failed or quota exhausted."
+    return "Error: All API keys exhausted or failed to respond."
 
-
-# --- Page Setup ---
+# Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# --- Custom CSS for Chat UI ---
-st.markdown("""
-    <style>
-    .chat-bubble {
-        max-width: 75%;
-        padding: 10px 15px;
-        margin: 10px 0;
-        border-radius: 10px;
-    }
-    .user-bubble {
-        background-color: #0b93f6;
-        color: white;
-        align-self: flex-end;
-        margin-left: auto;
-    }
-    .ai-bubble {
-        background-color: #e5e5ea;
-        color: black;
-        align-self: flex-start;
-        margin-right: auto;
-    }
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .stTextInput input {
-        padding: 10px;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-
-# --- Sidebar Navigation ---
+# Sidebar Navigation
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# --- Pre-Generated Roadmaps ---
 if nav_selection == "Pre-Generated Roadmaps":
     st.title("Pre-Generated Career Roadmaps")
     pre_generated = {
@@ -126,15 +82,13 @@ if nav_selection == "Pre-Generated Roadmaps":
             "url": "https://cloud.google.com/training"
         }
     }
-
+    
     for job, details in pre_generated.items():
         st.subheader(job)
         st.markdown(details["roadmap"].replace("\n", "\n\n"))
         st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
         st.markdown("---")
 
-
-# --- Best Earning Jobs ---
 elif nav_selection == "Best Earning Jobs":
     st.title("Best Earning Jobs & Salaries")
     jobs_data = [
@@ -147,73 +101,39 @@ elif nav_selection == "Best Earning Jobs":
     df = pd.DataFrame(jobs_data)
     st.dataframe(df)
 
-
-# --- Contact Page ---
 elif nav_selection == "Contact":
     st.title("Contact Us")
     st.write("For inquiries, reach out at:")
     st.write("Email: support@nextleap.com")
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
-
-# --- Home Page with Chat-Style Career Roadmap Generator ---
 else:
     st.title("NextLeap : Career Roadmap Generator")
-    st.write("Ask any career-related question and get AI-generated roadmaps with learning resources.")
-
-    tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap (Chat)", "Recommended Courses", "Live Job Listings", "Videos"])
-
-    # --- ChatGPT-style tab ---
+    st.write("Get a structured career roadmap with learning resources tailored to your job title.")
+    tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
+    
     with tab1:
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
-
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for chat in st.session_state.chat_history:
-            role_class = "user-bubble" if chat["role"] == "user" else "ai-bubble"
-            st.markdown(f'<div class="chat-bubble {role_class}">{chat["message"]}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        with st.form(key="chat_form", clear_on_submit=True):
-            user_input = st.text_input("Ask something career-related:", placeholder="e.g., Roadmap for AI Engineer")
-            submitted = st.form_submit_button("Send")
-
-            if submitted and user_input:
-                st.session_state.chat_history.append({"role": "user", "message": user_input})
-                with st.spinner("Generating roadmap..."):
-                    ai_response = get_hf_response(
-                        f"Provide a professional, step-by-step career roadmap for {user_input}. Include reference URLs if available."
-                    )
-                    # Check if AI response is empty or not
-                    if ai_response:
-                        st.session_state.chat_history.append({"role": "assistant", "message": ai_response})
-                    else:
-                        st.session_state.chat_history.append({"role": "assistant", "message": "Sorry, I couldn't generate a response."})
-
-    # --- Additional tabs use similar logic ---
-    with tab2:
-        if st.session_state.get("chat_history"):
-            job_title = st.session_state.chat_history[-1]["message"]
-            courses = get_hf_response(f"List top online courses for {job_title}")
-            st.subheader("Recommended Courses")
-            st.markdown(courses.replace("\n", "\n\n"))
-        else:
-            st.info("Ask a career-related question in the first tab to get course suggestions.")
-
-    with tab3:
-        if st.session_state.get("chat_history"):
-            job_title = st.session_state.chat_history[-1]["message"]
-            jobs = get_hf_response(f"List top job openings for {job_title}")
-            st.subheader("Live Job Listings")
-            st.markdown(jobs.replace("\n", "\n\n"))
-        else:
-            st.info("Ask a career-related question in the first tab to get job suggestions.")
-
-    with tab4:
-        if st.session_state.get("chat_history"):
-            job_title = st.session_state.chat_history[-1]["message"]
-            videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
-            st.subheader("Career Videos")
-            st.markdown(videos.replace("\n", "\n\n"))
-        else:
-            st.info("Ask a career-related question in the first tab to get video suggestions.")
+        job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+        submit = st.button("Generate Roadmap")
+        
+        if submit and job_title:
+            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+            response = get_hf_response(input_prompt)
+            st.subheader("Career Roadmap")
+            with st.expander("See Full Details"):
+                st.markdown(response.replace("\n", "\n\n"))
+            st.success("Roadmap generated successfully.")
+            
+            with tab2:
+                courses = get_hf_response(f"List top online courses for {job_title}.")
+                st.markdown(courses.replace("\n", "\n\n"))
+            
+            with tab3:
+          
+                jobs = get_hf_response(f"List top job openings for {job_title}.")            
+                st.markdown(jobs.replace("\n", "\n\n"))
+            
+            with tab4:
+            
+                videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
+                st.markdown(videos.replace("\n", "\n\n"))
