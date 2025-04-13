@@ -48,6 +48,44 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
 # --- Streamlit UI ---
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
+# --- User Profile Setup ---
+if 'user_profile' not in st.session_state:
+    st.session_state.user_profile = {}
+
+# --- Profile Information Section ---
+def create_user_profile():
+    """Set up the user profile for the first time"""
+    st.subheader("User Profile Setup")
+    name = st.text_input("Enter your name:", key="name")
+    job_title = st.text_input("Enter your current job title:", key="job_title")
+    skill_level_python = st.radio("How proficient are you in Python?", ["Beginner", "Intermediate", "Advanced"], key="skill_python")
+    skill_level_data_science = st.radio("How proficient are you in Data Science?", ["Beginner", "Intermediate", "Advanced"], key="skill_data_science")
+    skill_level_cloud_computing = st.radio("How proficient are you in Cloud Computing?", ["Beginner", "Intermediate", "Advanced"], key="skill_cloud_computing")
+    
+    if st.button("Save Profile"):
+        st.session_state.user_profile = {
+            "name": name,
+            "job_title": job_title,
+            "skill_level_python": skill_level_python,
+            "skill_level_data_science": skill_level_data_science,
+            "skill_level_cloud_computing": skill_level_cloud_computing
+        }
+        st.success("Profile saved successfully!")
+
+# --- Show Profile Setup or Edit Profile ---
+if not st.session_state.user_profile:
+    create_user_profile()
+else:
+    st.subheader("User Profile")
+    st.write(f"Name: {st.session_state.user_profile['name']}")
+    st.write(f"Job Title: {st.session_state.user_profile['job_title']}")
+    st.write(f"Python Skill Level: {st.session_state.user_profile['skill_level_python']}")
+    st.write(f"Data Science Skill Level: {st.session_state.user_profile['skill_level_data_science']}")
+    st.write(f"Cloud Computing Skill Level: {st.session_state.user_profile['skill_level_cloud_computing']}")
+    
+    if st.button("Edit Profile"):
+        create_user_profile()
+
 # Sidebar Navigation
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
@@ -115,13 +153,13 @@ else:
                 st.markdown(response.replace("\n", "\n\n"))
             st.success("Roadmap generated successfully.")
     
-    # Tab 2: Skill Assessment
+    # Tab 2: Skill Assessment (Read from the profile)
     with tab2:
         st.subheader("Skill Assessment")
-        skill_level = st.radio("How proficient are you in the following skills?", 
-                               ["Beginner", "Intermediate", "Advanced"], key="skill_level")
-        st.write(f"Your skill level: {skill_level}")
-        st.write("This helps us understand your current capabilities and suggests the best resources.")
+        st.write(f"Your Python skill level: {st.session_state.user_profile['skill_level_python']}")
+        st.write(f"Your Data Science skill level: {st.session_state.user_profile['skill_level_data_science']}")
+        st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
+        st.write("Based on your profile, we suggest you look into these specific learning resources.")
 
     # Tab 3: Recommended Courses
     with tab3:
