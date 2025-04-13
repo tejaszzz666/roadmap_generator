@@ -17,21 +17,26 @@ api_key_cycle = cycle(hf_api_keys)
 
 @lru_cache(maxsize=50)
 def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
-    """Fetches AI-generated responses from Hugging Face API with key cycling."""
+    """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
+    headers_template = lambda key: {"Authorization": f"Bearer {key}"}
     
     for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers = headers_template(api_key)
 
         try:
             response = requests.post(api_url, headers=headers, json={"inputs": question})
             
             if response.status_code == 429:
                 wait_time = int(response.headers.get("Retry-After", 10))
-                st.warning(f"Rate limit hit. Retrying in {wait_time} seconds...")
+                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
                 time.sleep(wait_time)
-                continue  
+                continue
+
+            elif response.status_code == 402:
+                st.warning(f"Key with payment issue (402), skipping...")
+                continue
 
             response.raise_for_status()
             response_data = response.json()
@@ -41,11 +46,15 @@ def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
                 if output.startswith(question):
                     output = output[len(question):].strip()
                 return output
+            else:
+                st.warning(f"Unexpected response format: {response_data}")
+                continue
 
         except requests.exceptions.RequestException as e:
-            return f"API Error: {e}"
+            st.warning(f"Error with API key: {api_key[:5]}... — {e}")
+            continue
 
-    return "Error: All API keys exhausted or failed to respond."
+    return "❌ All API keys failed or quota exhausted."
 
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
