@@ -86,6 +86,9 @@ st.markdown("""
         flex-direction: column;
         gap: 10px;
     }
+    .stTextInput input {
+        padding: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
