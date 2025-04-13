@@ -160,12 +160,28 @@ else:
             st.success("Roadmap generated successfully.")
 
     # Tab 2: Skill Assessment (Read from the profile)
-    with tab2:
-        st.subheader("Skill Assessment")
+   # --- Skill Assessment Tab ---
+with tab2:
+    st.subheader("Skill Assessment")
+    
+    # Check if user profile exists and contains the necessary keys
+    if 'skill_level_python' in st.session_state.user_profile:
         st.write(f"Your Python skill level: {st.session_state.user_profile['skill_level_python']}")
+    else:
+        st.write("Python skill level: Not set")
+    
+    if 'skill_level_data_science' in st.session_state.user_profile:
         st.write(f"Your Data Science skill level: {st.session_state.user_profile['skill_level_data_science']}")
+    else:
+        st.write("Data Science skill level: Not set")
+    
+    if 'skill_level_cloud_computing' in st.session_state.user_profile:
         st.write(f"Your Cloud Computing skill level: {st.session_state.user_profile['skill_level_cloud_computing']}")
-        st.write("Based on your profile, we suggest you look into these specific learning resources.")
+    else:
+        st.write("Cloud Computing skill level: Not set")
+    
+    st.write("Based on your profile, we suggest you look into these specific learning resources.")
+
 
     # Tab 3: Recommended Courses
     with tab3:
