@@ -141,17 +141,19 @@ else:
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Skill Assessment", "Recommended Courses", "Live Job Listings"])
 
     # Tab 1: Career Roadmap Generator
-    with tab1:
-        job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
-        submit = st.button("Generate Roadmap")
-        
-        if submit and job_title:
-            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_hf_response(input_prompt)
-            st.subheader("Career Roadmap")
-            with st.expander("See Full Details"):
-                st.markdown(response.replace("\n", "\n\n"))
-            st.success("Roadmap generated successfully.")
+  # In the "Career Roadmap Generator" tab
+with tab1:
+    job_title = st.text_input("Enter the job title:", key="job_title_input", placeholder="e.g., Data Scientist")
+    submit = st.button("Generate Roadmap", key="submit_button")
+    
+    if submit and job_title:
+        input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+        response = get_hf_response(input_prompt)
+        st.subheader("Career Roadmap")
+        with st.expander("See Full Details"):
+            st.markdown(response.replace("\n", "\n\n"))
+        st.success("Roadmap generated successfully.")
+
     
     # Tab 2: Skill Assessment (Read from the profile)
     with tab2:
