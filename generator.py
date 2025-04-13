@@ -76,18 +76,45 @@ def create_user_profile():
 def display_user_profile():
     """Display user profile information"""
     st.subheader("User Profile")
-    st.write(f"Name: {st.session_state.user_profile['name']}")
-    st.write(f"Job Title: {st.session_state.user_profile['job_title']}")
-    st.write(f"Python Skill Level: {st.session_state.user_profile['skill_level_python']}")
-    st.write(f"Data Science Skill Level: {st.session_state.user_profile['skill_level_data_science']}")
-    st.write(f"Cloud Computing Skill Level: {st.session_state.user_profile['skill_level_cloud_computing']}")
+    st.write(f"**Name**: {st.session_state.user_profile['name']}")
+    st.write(f"**Job Title**: {st.session_state.user_profile['job_title']}")
+    st.write(f"**Python Skill Level**: {st.session_state.user_profile['skill_level_python']}")
+    st.write(f"**Data Science Skill Level**: {st.session_state.user_profile['skill_level_data_science']}")
+    st.write(f"**Cloud Computing Skill Level**: {st.session_state.user_profile['skill_level_cloud_computing']}")
     
     if st.button("Edit Profile"):
         create_user_profile()
 
-# Sidebar Navigation
+# Sidebar Navigation with Styling
 st.sidebar.title("Navigation")
-nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "User Profile"])
+
+# Add custom style to make the sidebar more premium
+sidebar_style = """
+    <style>
+        .sidebar .sidebar-content {
+            background-color: #f0f4f8;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+            font-size: 16px;
+        }
+        .sidebar .sidebar-content a {
+            font-weight: bold;
+            font-size: 18px;
+            color: #0057b7;
+        }
+        .sidebar .sidebar-content a:hover {
+            color: #FF6347;
+        }
+        .sidebar .sidebar-content .stRadio label {
+            font-size: 16px;
+            font-weight: normal;
+        }
+    </style>
+"""
+st.markdown(sidebar_style, unsafe_allow_html=True)
+
+# Reordered Navigation in Sidebar
+nav_selection = st.sidebar.radio("Go to:", ["User Profile", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact", "Home"])
 
 # User Profile Page in Sidebar
 if nav_selection == "User Profile":
@@ -141,7 +168,7 @@ elif nav_selection == "Contact":
     st.write("Website: [NextLeap](https://roadmapgenerator-x3jmrdqlpa6awk6wambbxv.streamlit.app)")
 
 # Career Roadmap Generator
-else:
+elif nav_selection == "Home":
     st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Skill Assessment", "Recommended Courses", "Live Job Listings"])
