@@ -6,7 +6,7 @@ import pandas as pd
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
-# API Key input
+# API Key input (now comes before job title input)
 api_key_input = st.text_input("Enter your Hugging Face API Key:")
 
 def get_hf_response(question, model_id="mistralai/Mixtral-8x7B-Instruct-v0.1"):
