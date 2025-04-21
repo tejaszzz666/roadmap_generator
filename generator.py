@@ -10,10 +10,10 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# Shared Together.ai response handler
-def get_togetherai_response(question, api_key, model_id="togetherai/career-roadmap-model"):
+# Shared Llama 4 Scout response handler
+def get_llama4scout_response(question, api_key, model_id="llama4scout/career-roadmap-model"):
     if not api_key:
-        return "❌ Please enter a valid Together.ai API key."
+        return "❌ Please enter a valid API key."
 
     api_url = f"https://api.together.ai/v1/models/{model_id}/predict"
     headers = {"Authorization": f"Bearer {api_key}"}
@@ -25,7 +25,7 @@ def get_togetherai_response(question, api_key, model_id="togetherai/career-roadm
             wait_time = int(response.headers.get("Retry-After", 10))
             st.warning(f"Rate limit hit. Retrying in {wait_time}s...")
             time.sleep(wait_time)
-            return get_togetherai_response(question, api_key, model_id)
+            return get_llama4scout_response(question, api_key, model_id)
 
         elif response.status_code == 402:
             return "❌ Payment required for using the model."
@@ -33,11 +33,10 @@ def get_togetherai_response(question, api_key, model_id="togetherai/career-roadm
         response.raise_for_status()
         data = response.json()
 
-        # Assuming the response contains the 'generated_text'
         if "generated_text" in data:
             return data["generated_text"]
         else:
-            return "❌ Unexpected response format."
+            return "❌ No roadmap generated. Please try again."
 
     except requests.exceptions.RequestException as e:
         return f"❌ API error: {e}"
@@ -83,7 +82,7 @@ else:
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
     # API Key input JUST BELOW title
-    api_key = st.text_input("Enter your Together.ai API Key:", type="password")
+    api_key = st.text_input("Enter your API Key:", type="password")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
 
@@ -93,25 +92,25 @@ else:
 
         if submit and job_title and api_key:
             input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_togetherai_response(input_prompt, api_key)
+            response = get_llama4scout_response(input_prompt, api_key)
             st.subheader("Career Roadmap")
             with st.expander("See Full Details"):
                 st.markdown(response.replace("\n", "\n\n"))
             st.success("Roadmap generated successfully.")
         elif submit and not api_key:
-            st.error("Please enter your Together.ai API key.")
+            st.error("Please enter your API key.")
 
     with tab2:
         if submit and job_title and api_key:
-            courses = get_togetherai_response(f"List top online courses for {job_title}.", api_key)
+            courses = get_llama4scout_response(f"List top online courses for {job_title}.", api_key)
             st.markdown(courses.replace("\n", "\n\n"))
 
     with tab3:
         if submit and job_title and api_key:
-            jobs = get_togetherai_response(f"List top job openings for {job_title}.", api_key)
+            jobs = get_llama4scout_response(f"List top job openings for {job_title}.", api_key)
             st.markdown(jobs.replace("\n", "\n\n"))
 
     with tab4:
         if submit and job_title and api_key:
-            videos = get_togetherai_response(f"List top YouTube videos for {job_title} career guidance.", api_key)
+            videos = get_llama4scout_response(f"List top YouTube videos for {job_title} career guidance.", api_key)
             st.markdown(videos.replace("\n", "\n\n"))
