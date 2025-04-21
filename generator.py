@@ -2,6 +2,7 @@ import time
 import requests
 import streamlit as st
 import pandas as pd
+from together import Together
 
 # Streamlit UI setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
@@ -10,35 +11,22 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# Shared Llama 4 Scout response handler
-def get_llama4scout_response(question, api_key, model_id="llama4scout/career-roadmap-model"):
+# Initialize the Together client
+client = Together()
+
+# Shared Together.ai response handler using Llama model
+def get_llama_response(question, api_key, model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"):
     if not api_key:
         return "❌ Please enter a valid API key."
 
-    api_url = f"https://api.together.ai/v1/models/{model_id}/predict"
-    headers = {"Authorization": f"Bearer {api_key}"}
-
     try:
-        response = requests.post(api_url, headers=headers, json={"inputs": question})
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": question}]
+        )
+        return response.choices[0].message.content
 
-        if response.status_code == 429:
-            wait_time = int(response.headers.get("Retry-After", 10))
-            st.warning(f"Rate limit hit. Retrying in {wait_time}s...")
-            time.sleep(wait_time)
-            return get_llama4scout_response(question, api_key, model_id)
-
-        elif response.status_code == 402:
-            return "❌ Payment required for using the model."
-
-        response.raise_for_status()
-        data = response.json()
-
-        if "generated_text" in data:
-            return data["generated_text"]
-        else:
-            return "❌ No roadmap generated. Please try again."
-
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return f"❌ API error: {e}"
 
 # Page Logic
@@ -92,7 +80,7 @@ else:
 
         if submit and job_title and api_key:
             input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_llama4scout_response(input_prompt, api_key)
+            response = get_llama_response(input_prompt, api_key)
             st.subheader("Career Roadmap")
             with st.expander("See Full Details"):
                 st.markdown(response.replace("\n", "\n\n"))
@@ -102,15 +90,15 @@ else:
 
     with tab2:
         if submit and job_title and api_key:
-            courses = get_llama4scout_response(f"List top online courses for {job_title}.", api_key)
+            courses = get_llama_response(f"List top online courses for {job_title}.", api_key)
             st.markdown(courses.replace("\n", "\n\n"))
 
     with tab3:
         if submit and job_title and api_key:
-            jobs = get_llama4scout_response(f"List top job openings for {job_title}.", api_key)
+            jobs = get_llama_response(f"List top job openings for {job_title}.", api_key)
             st.markdown(jobs.replace("\n", "\n\n"))
 
     with tab4:
         if submit and job_title and api_key:
-            videos = get_llama4scout_response(f"List top YouTube videos for {job_title} career guidance.", api_key)
+            videos = get_llama_response(f"List top YouTube videos for {job_title} career guidance.", api_key)
             st.markdown(videos.replace("\n", "\n\n"))
