@@ -16,49 +16,48 @@ hf_api_keys = [
 api_key_cycle = cycle(hf_api_keys)
 
 @lru_cache(maxsize=50)
-def get_hf_response(question, model_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"):
+def get_hf_response(question, model_id="mistralai/Mixtral-8x7B-Instruct-v0.1"):
     """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     headers_template = lambda key: {"Authorization": f"Bearer {key}"}
-    
-    # Iterate through keys if a request fails or rate-limited
+
+    # Loop through API keys and attempt to get a valid response
     for _ in range(len(hf_api_keys)):
         api_key = next(api_key_cycle)
         headers = headers_template(api_key)
 
-        try:  
-            response = requests.post(api_url, headers=headers, json={"inputs": question})  
+        try:
+            response = requests.post(api_url, headers=headers, json={"inputs": question})
+            
+            if response.status_code == 429:
+                wait_time = int(response.headers.get("Retry-After", 10))
+                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+                continue
 
-            if response.status_code == 429:  
-                # Rate limit error, retry with the next key
-                wait_time = int(response.headers.get("Retry-After", 10))  
-                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")  
-                time.sleep(wait_time)  
-                continue  
+            elif response.status_code == 402:
+                continue  # Silent skip on payment issue
 
-            elif response.status_code == 402:  
-                # Skip on payment issue
-                continue  
+            response.raise_for_status()
+            response_data = response.json()
 
-            response.raise_for_status()  
-            response_data = response.json()  
+            if isinstance(response_data, list) and 'generated_text' in response_data[0]:
+                output = response_data[0]['generated_text']
+                if output.startswith(question):
+                    output = output[len(question):].strip()
+                return output
+            else:
+                st.warning(f"Unexpected response format: {response_data}")
+                continue
 
-            if isinstance(response_data, list) and 'generated_text' in response_data[0]:  
-                output = response_data[0]['generated_text']  
-                if output.startswith(question):  
-                    output = output[len(question):].strip()  
-                return output  
-            else:  
-                st.warning(f"Unexpected response format: {response_data}")  
-                continue  
-
-        except requests.exceptions.RequestException as e:  
-            st.warning(f"Error with API key: {api_key[:5]}... — {e}")  
-            continue  
+        except requests.exceptions.RequestException as e:
+            st.warning(f"Error with API key: {api_key[:5]}... — {e}")
+            continue
 
     return "❌ All API keys failed or quota exhausted."
 
-# Streamlit UI Setup
+
+# Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
 # Sidebar Navigation
@@ -76,28 +75,13 @@ if nav_selection == "Pre-Generated Roadmaps":
             "roadmap": "1. Learn Programming (Python, Java, C++)\n2. Understand Data Structures and Algorithms\n3. Build Projects and Contribute to Open Source\n4. Master System Design & Databases\n5. Apply for Internships and Jobs",
             "url": "https://roadmap.sh/software-engineer"
         },
-        "Cybersecurity Expert": {
-            "roadmap": "1. Learn Networking and Security Basics\n2. Get Certified (CEH, CISSP, OSCP)\n3. Learn Ethical Hacking and Penetration Testing\n4. Gain Hands-on Experience\n5. Apply for Cybersecurity Roles",
-            "url": "https://www.cybrary.it/"
-        },
-        "AI Engineer": {
-            "roadmap": "1. Learn Python and Deep Learning Frameworks\n2. Master Machine Learning & Neural Networks\n3. Work on AI/ML Projects\n4. Understand Model Deployment & Cloud Platforms\n5. Apply for AI Engineer Roles",
-            "url": "https://www.deeplearning.ai"
-        },
-        "Product Manager": {
-            "roadmap": "1. Learn Business & Market Analysis\n2. Develop Leadership & UX Knowledge\n3. Understand Agile & Scrum Methodologies\n4. Build Roadmaps & Work on Projects\n5. Apply for Product Manager Roles",
-            "url": "https://www.productschool.com/"
-        },
-        "Cloud Engineer": {
-            "roadmap": "1. Learn Cloud Platforms (AWS, Azure, GCP)\n2. Master Networking & Security\n3. Understand DevOps & Infrastructure as Code\n4. Gain Certifications\n5. Apply for Cloud Engineer Roles",
-            "url": "https://cloud.google.com/training"
-        }
+        # Add other roles as needed
     }
 
-    for job, details in pre_generated.items():  
-        st.subheader(job)  
-        st.markdown(details["roadmap"].replace("\n", "\n\n"))  
-        st.markdown(f"[Reference: {job} Roadmap]({details['url']})")  
+    for job, details in pre_generated.items():
+        st.subheader(job)
+        st.markdown(details["roadmap"].replace("\n", "\n\n"))
+        st.markdown(f"[Reference: {job} Roadmap]({details['url']})")
         st.markdown("---")
 
 elif nav_selection == "Best Earning Jobs":
@@ -123,26 +107,29 @@ else:
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
 
-    with tab1:  
-        job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")  
-        submit = st.button("Generate Roadmap")  
+    with tab1:
+        job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
+        submit = st.button("Generate Roadmap")
 
-        if submit and job_title:  
-            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."  
-            response = get_hf_response(input_prompt)  
-            st.subheader("Career Roadmap")  
-            with st.expander("See Full Details"):  
-                st.markdown(response.replace("\n", "\n\n"))  
-            st.success("Roadmap generated successfully.")  
+        if submit and job_title:
+            input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
+            response = get_hf_response(input_prompt)
+            st.subheader("Career Roadmap")
+            with st.expander("See Full Details"):
+                st.markdown(response.replace("\n", "\n\n"))
+            st.success("Roadmap generated successfully.")
 
-            with tab2:  
-                courses = get_hf_response(f"List top online courses for {job_title}.")  
-                st.markdown(courses.replace("\n", "\n\n"))  
+    with tab2:
+        if submit and job_title:
+            courses = get_hf_response(f"List top online courses for {job_title}.")
+            st.markdown(courses.replace("\n", "\n\n"))
 
-            with tab3:  
-                jobs = get_hf_response(f"List top job openings for {job_title}.")              
-                st.markdown(jobs.replace("\n", "\n\n"))  
+    with tab3:
+        if submit and job_title:
+            jobs = get_hf_response(f"List top job openings for {job_title}.")
+            st.markdown(jobs.replace("\n", "\n\n"))
 
-            with tab4:  
-                videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")  
-                st.markdown(videos.replace("\n", "\n\n"))
+    with tab4:
+        if submit and job_title:
+            videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
+            st.markdown(videos.replace("\n", "\n\n"))
