@@ -2,63 +2,46 @@ import time
 import requests
 import streamlit as st
 import pandas as pd
-from itertools import cycle
-from functools import lru_cache
-
-# Load Hugging Face API keys
-hf_api_keys = [
-    st.secrets["huggingface"]["HF_API_KEY_1"],
-    st.secrets["huggingface"]["HF_API_KEY_2"],
-    st.secrets["huggingface"]["HF_API_KEY_3"],
-    st.secrets["huggingface"]["HF_API_KEY_4"],
-    st.secrets["huggingface"]["HF_API_KEY_5"]
-]
-api_key_cycle = cycle(hf_api_keys)
-
-@lru_cache(maxsize=50)
-def get_hf_response(question, model_id="mistralai/Mixtral-8x7B-Instruct-v0.1"):
-    """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
-    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    headers_template = lambda key: {"Authorization": f"Bearer {key}"}
-
-    # Loop through API keys and attempt to get a valid response
-    for _ in range(len(hf_api_keys)):
-        api_key = next(api_key_cycle)
-        headers = headers_template(api_key)
-
-        try:
-            response = requests.post(api_url, headers=headers, json={"inputs": question})
-            
-            if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
-                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
-                time.sleep(wait_time)
-                continue
-
-            elif response.status_code == 402:
-                continue  # Silent skip on payment issue
-
-            response.raise_for_status()
-            response_data = response.json()
-
-            if isinstance(response_data, list) and 'generated_text' in response_data[0]:
-                output = response_data[0]['generated_text']
-                if output.startswith(question):
-                    output = output[len(question):].strip()
-                return output
-            else:
-                st.warning(f"Unexpected response format: {response_data}")
-                continue
-
-        except requests.exceptions.RequestException as e:
-            st.warning(f"Error with API key: {api_key[:5]}... — {e}")
-            continue
-
-    return "❌ All API keys failed or quota exhausted."
-
 
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
+
+# API Key input
+api_key_input = st.text_input("Enter your Hugging Face API Key:")
+
+def get_hf_response(question, model_id="mistralai/Mixtral-8x7B-Instruct-v0.1"):
+    """Fetch AI-generated responses from Hugging Face API."""
+    if not api_key_input:
+        return "❌ Please enter a valid Hugging Face API key."
+
+    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
+    headers = {"Authorization": f"Bearer {api_key_input}"}
+
+    try:
+        response = requests.post(api_url, headers=headers, json={"inputs": question})
+
+        if response.status_code == 429:
+            wait_time = int(response.headers.get("Retry-After", 10))
+            st.warning(f"Rate limit hit. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+            return get_hf_response(question, model_id)  # Retry after waiting
+
+        elif response.status_code == 402:
+            return "❌ Payment required for using the model."
+
+        response.raise_for_status()
+        response_data = response.json()
+
+        if isinstance(response_data, list) and 'generated_text' in response_data[0]:
+            output = response_data[0]['generated_text']
+            if output.startswith(question):
+                output = output[len(question):].strip()
+            return output
+        else:
+            return "❌ Unexpected response format."
+
+    except requests.exceptions.RequestException as e:
+        return f"❌ Error with API request: {e}"
 
 # Sidebar Navigation
 st.sidebar.title("Navigation")
