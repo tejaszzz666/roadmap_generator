@@ -10,8 +10,6 @@ from itertools import cycle
 
 from functools import lru_cache
 
-Load Hugging Face API keys
-
 hf_api_keys = [
 
 st.secrets["huggingface"]["HF_API_KEY_1"],
@@ -108,11 +106,8 @@ for _ in range(len(hf_api_keys)):
 
 return "❌ All API keys failed or quota exhausted."
 
-Streamlit UI
 
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
-
-Sidebar Navigation
 
 st.sidebar.title("Navigation")
 
