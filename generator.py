@@ -4,35 +4,32 @@ import streamlit as st
 import pandas as pd
 from functools import lru_cache
 
-# Load Together AI API key from Streamlit secrets
-TOGETHER_API_KEY = st.secrets["together_ai"]["API_KEY"]
-
+# Together API Function
 @lru_cache(maxsize=50)
-def get_hf_response(question, model_id="meta-llama/Llama-3-70B-Instruct-Turbo-Free"):
-    """Fetch response from Together AI API"""
-    url = "https://api.together.xyz/v1/completions"
+def get_together_response(prompt, model="meta-llama/Llama-3-70B-Instruct-Turbo-Free"):
+    url = "https://api.together.xyz/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {TOGETHER_API_KEY}",
+        "Authorization": f"Bearer {st.secrets['together_api_key']}",
         "Content-Type": "application/json"
     }
-    payload = {
+    data = {
         "model": model,
-        "prompt": prompt,
+        "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 1024,
         "temperature": 0.7,
-        "stop": ["\nUser:", "\nAssistant:"]
+        "top_p": 0.9
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["text"].strip()
+        content = response.json()
+        return content['choices'][0]['message']['content'].strip()
     except Exception as e:
-        st.error(f"Together AI Error: {e}")
-        return "Something went wrong."
+        st.warning(f"Together API error: {e}")
+        return "❌ Failed to fetch response from Together AI"
 
-# Streamlit UI
+# UI Config
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 
 # Sidebar Navigation
