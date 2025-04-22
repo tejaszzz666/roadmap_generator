@@ -2,7 +2,6 @@ import time
 import requests
 import streamlit as st
 import pandas as pd
-from together import Together
 
 # Streamlit UI setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
@@ -11,21 +10,26 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# Initialize the Together client
-client = Together()
-
-# Shared Together.ai response handler using Llama model
+# Together API request using plain requests
 def get_llama_response(question, api_key, model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"):
     if not api_key:
         return "❌ Please enter a valid API key."
 
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": question}]
+        response = requests.post(
+            "https://api.together.xyz/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": question}]
+            }
         )
-        return response.choices[0].message.content
-
+        response.raise_for_status()
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
     except Exception as e:
         return f"❌ API error: {e}"
 
