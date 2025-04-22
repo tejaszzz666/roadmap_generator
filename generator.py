@@ -2,6 +2,7 @@ import time
 import requests
 import streamlit as st
 import pandas as pd
+from together import Together
 
 # Streamlit UI setup
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
@@ -10,26 +11,19 @@ st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
 st.sidebar.title("Navigation")
 nav_selection = st.sidebar.radio("Go to:", ["Home", "Pre-Generated Roadmaps", "Best Earning Jobs", "Contact"])
 
-# Together API request using plain requests
-def get_llama_response(question, api_key, model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"):
+# Shared Together.ai response handler using Llama model
+def get_llama_response(question, model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"):
+    api_key = st.secrets.get("TOGETHER_API_KEY")
     if not api_key:
-        return "❌ Please enter a valid API key."
+        return "❌ API key not found. Add it to Streamlit Secrets."
 
     try:
-        response = requests.post(
-            "https://api.together.xyz/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": question}]
-            }
+        client = Together(api_key=api_key)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": question}]
         )
-        response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
         return f"❌ API error: {e}"
 
@@ -73,36 +67,31 @@ else:
     st.title("NextLeap : Career Roadmap Generator")
     st.write("Get a structured career roadmap with learning resources tailored to your job title.")
 
-    # API Key input JUST BELOW title
-    api_key = st.text_input("Enter your API Key:", type="password")
-
     tab1, tab2, tab3, tab4 = st.tabs(["Career Roadmap", "Recommended Courses", "Live Job Listings", "Videos"])
 
     with tab1:
         job_title = st.text_input("Enter the job title:", key="job_title", placeholder="e.g., Data Scientist")
         submit = st.button("Generate Roadmap")
 
-        if submit and job_title and api_key:
+        if submit and job_title:
             input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_llama_response(input_prompt, api_key)
+            response = get_llama_response(input_prompt)
             st.subheader("Career Roadmap")
             with st.expander("See Full Details"):
                 st.markdown(response.replace("\n", "\n\n"))
             st.success("Roadmap generated successfully.")
-        elif submit and not api_key:
-            st.error("Please enter your API key.")
 
     with tab2:
-        if submit and job_title and api_key:
-            courses = get_llama_response(f"List top online courses for {job_title}.", api_key)
+        if submit and job_title:
+            courses = get_llama_response(f"List top online courses for {job_title}.")
             st.markdown(courses.replace("\n", "\n\n"))
 
     with tab3:
-        if submit and job_title and api_key:
-            jobs = get_llama_response(f"List top job openings for {job_title}.", api_key)
+        if submit and job_title:
+            jobs = get_llama_response(f"List top job openings for {job_title}.")
             st.markdown(jobs.replace("\n", "\n\n"))
 
     with tab4:
-        if submit and job_title and api_key:
-            videos = get_llama_response(f"List top YouTube videos for {job_title} career guidance.", api_key)
+        if submit and job_title:
+            videos = get_llama_response(f"List top YouTube videos for {job_title} career guidance.")
             st.markdown(videos.replace("\n", "\n\n"))
