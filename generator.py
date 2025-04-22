@@ -1,60 +1,36 @@
- import time
+import time
 import requests
 import streamlit as st
 import pandas as pd
-from itertools import cycle
 from functools import lru_cache
 
-# Load Hugging Face API keys
-hf_api_keys = [
-    st.secrets["huggingface"]["HF_API_KEY_1"],
-    st.secrets["huggingface"]["HF_API_KEY_2"],
-    st.secrets["huggingface"]["HF_API_KEY_3"],
-    st.secrets["huggingface"]["HF_API_KEY_4"],
-    st.secrets["huggingface"]["HF_API_KEY_5"]
-]
-api_key_cycle = cycle(hf_api_keys)
+# Load Together AI API key from Streamlit secrets
+TOGETHER_API_KEY = st.secrets["together_ai"]["API_KEY"]
 
 @lru_cache(maxsize=50)
-def get_hf_response(question, model_id="mistralai/Mistral-7B-Instruct-v0.1"):
-    """Fetch AI-generated responses from Hugging Face API, rotating keys on errors."""
-    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    headers_template = lambda key: {"Authorization": f"Bearer {key}"}
-    
-    for _ in range(len(hf_api_keys)):
-        api_key = next(api_key_cycle)
-        headers = headers_template(api_key)
+def get_together_response(prompt, model="mistralai/Mistral-7B-Instruct-v0.1"):
+    """Fetch response from Together AI API"""
+    url = "https://api.together.xyz/v1/completions"
+    headers = {
+        "Authorization": f"Bearer {TOGETHER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "max_tokens": 1024,
+        "temperature": 0.7,
+        "stop": ["\nUser:", "\nAssistant:"]
+    }
 
-        try:
-            response = requests.post(api_url, headers=headers, json={"inputs": question})
-            
-            if response.status_code == 429:
-                wait_time = int(response.headers.get("Retry-After", 10))
-                st.warning(f"Rate limit hit for one key. Retrying in {wait_time}s...")
-                time.sleep(wait_time)
-                continue
-
-            elif response.status_code == 402:
-                # Silent skip on payment issue, no warning message
-                continue
-
-            response.raise_for_status()
-            response_data = response.json()
-
-            if isinstance(response_data, list) and 'generated_text' in response_data[0]:
-                output = response_data[0]['generated_text']
-                if output.startswith(question):
-                    output = output[len(question):].strip()
-                return output
-            else:
-                st.warning(f"Unexpected response format: {response_data}")
-                continue
-
-        except requests.exceptions.RequestException as e:
-            st.warning(f"Error with API key: {api_key[:5]}... — {e}")
-            continue
-
-    return "❌ All API keys failed or quota exhausted."
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        result = response.json()
+        return result["choices"][0]["text"].strip()
+    except Exception as e:
+        st.error(f"Together AI Error: {e}")
+        return "Something went wrong."
 
 # Streamlit UI
 st.set_page_config(page_title="NextLeap - Career Guide", layout="wide")
@@ -127,20 +103,20 @@ else:
         
         if submit and job_title:
             input_prompt = f"Provide a professional, step-by-step career roadmap for {job_title}. Include reference URLs if available."
-            response = get_hf_response(input_prompt)
+            response = get_together_response(input_prompt)
             st.subheader("Career Roadmap")
             with st.expander("See Full Details"):
                 st.markdown(response.replace("\n", "\n\n"))
             st.success("Roadmap generated successfully.")
             
             with tab2:
-                courses = get_hf_response(f"List top online courses for {job_title}.")
+                courses = get_together_response(f"List top online courses for {job_title}.")
                 st.markdown(courses.replace("\n", "\n\n"))
             
             with tab3:
-                jobs = get_hf_response(f"List top job openings for {job_title}.")            
+                jobs = get_together_response(f"List top job openings for {job_title}.")            
                 st.markdown(jobs.replace("\n", "\n\n"))
             
             with tab4:
-                videos = get_hf_response(f"List top YouTube videos for {job_title} career guidance.")
+                videos = get_together_response(f"List top YouTube videos for {job_title} career guidance.")
                 st.markdown(videos.replace("\n", "\n\n"))
