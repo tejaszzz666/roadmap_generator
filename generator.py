@@ -8,7 +8,7 @@ from functools import lru_cache
 TOGETHER_API_KEY = st.secrets["together_ai"]["API_KEY"]
 
 @lru_cache(maxsize=50)
-def get_together_response(prompt, model="mistralai/Mistral-7B-Instruct-v0.1"):
+def get_hf_response(question, model_id="meta-llama/Llama-3-70B-Instruct-Turbo-Free"):
     """Fetch response from Together AI API"""
     url = "https://api.together.xyz/v1/completions"
     headers = {
