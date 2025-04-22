@@ -1,3 +1,4 @@
 streamlit
-requests
 pandas
+requests
+git+https://github.com/togethercomputer/together-python.git
